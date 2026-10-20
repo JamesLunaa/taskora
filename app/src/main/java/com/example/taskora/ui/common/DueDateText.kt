@@ -5,24 +5,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.example.taskora.R
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
-
-enum class DueStatus { OVERDUE, TODAY, UPCOMING }
-
-/** A task due today with no time is never overdue until the day is over. */
-fun dueStatus(date: LocalDate, time: LocalTime?, now: LocalDateTime): DueStatus {
-    val today = now.toLocalDate()
-    return when {
-        date < today -> DueStatus.OVERDUE
-        date > today -> DueStatus.UPCOMING
-        time != null && time < now.toLocalTime() -> DueStatus.OVERDUE
-        else -> DueStatus.TODAY
-    }
-}
 
 data class RelativeDayLabels(val yesterday: String, val today: String, val tomorrow: String)
 

@@ -1,5 +1,7 @@
 package com.example.taskora.ui.common
 
+import com.example.taskora.domain.DueStatus
+import com.example.taskora.domain.dueStatus
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.LocalDate

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
@@ -75,6 +76,7 @@ import java.time.LocalDate
 fun TaskListScreen(
     onTaskClick: (Long) -> Unit,
     onOpenList: (Long) -> Unit,
+    onSearch: () -> Unit,
     viewModel: TaskListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -102,6 +104,7 @@ fun TaskListScreen(
             onEditList = viewModel::editList,
             onDeleteList = viewModel::deleteList,
             onSortModeChange = viewModel::setSortMode,
+            onSearch = onSearch,
         ),
     )
 }
@@ -118,6 +121,7 @@ class TaskListActions(
     val onEditList: (String, Int) -> Unit = { _, _ -> },
     val onDeleteList: () -> Unit = {},
     val onSortModeChange: (TaskSortMode) -> Unit = {},
+    val onSearch: () -> Unit = {},
 )
 
 private enum class TaskListDialog { NONE, CLEAR_COMPLETED, NEW_LIST, EDIT_LIST, DELETE_LIST, SORT }
@@ -177,6 +181,9 @@ fun TaskListContent(
                         }
                     },
                     actions = {
+                        IconButton(onClick = actions.onSearch) {
+                            Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
+                        }
                         OverflowMenu(
                             canEditList = uiState.list != null,
                             canDeleteList = uiState.list?.isInbox == false,

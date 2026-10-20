@@ -20,6 +20,9 @@ import javax.inject.Singleton
 
 interface TaskRepository {
     fun observeTasks(listId: Long): Flow<List<Task>>
+
+    /** Every task in every list, unordered. */
+    fun observeAllTasks(): Flow<List<Task>>
     fun observeTask(id: Long): Flow<Task?>
     suspend fun getTask(id: Long): Task?
 
@@ -60,6 +63,9 @@ class OfflineTaskRepository @Inject constructor(
 ) : TaskRepository {
     override fun observeTasks(listId: Long): Flow<List<Task>> =
         taskDao.observeByList(listId).map { tasks -> tasks.map { it.toDomain() } }
+
+    override fun observeAllTasks(): Flow<List<Task>> =
+        taskDao.observeAll().map { tasks -> tasks.map { it.toDomain() } }
 
     override fun observeTask(id: Long): Flow<Task?> =
         taskDao.observeById(id).map { it?.toDomain() }

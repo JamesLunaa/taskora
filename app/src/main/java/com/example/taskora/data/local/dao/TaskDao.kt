@@ -19,6 +19,10 @@ interface TaskDao {
     fun observeByList(listId: Long): Flow<List<TaskWithSubtasks>>
 
     @Transaction
+    @Query("SELECT * FROM tasks")
+    fun observeAll(): Flow<List<TaskWithSubtasks>>
+
+    @Transaction
     @Query("SELECT * FROM tasks WHERE id = :id")
     fun observeById(id: Long): Flow<TaskWithSubtasks?>
 

@@ -113,6 +113,27 @@
         <item quantity="other">years</item>
     </plurals>
 
+    <!-- Search -->
+    <string name="search">Search</string>
+    <string name="search_hint">Search tasks</string>
+    <string name="clear_search">Clear search</string>
+    <string name="search_empty_hint">Search titles and notes, or pick a filter.</string>
+    <string name="search_no_results">No matching tasks</string>
+    <string name="filter_open">Open</string>
+    <string name="filter_completed">Completed</string>
+    <string name="filter_all_tasks">All tasks</string>
+    <string name="filter_all_lists">All lists</string>
+    <string name="filter_any_priority">Any priority</string>
+    <plurals name="filter_n_priorities">
+        <item quantity="one">%1$d priority</item>
+        <item quantity="other">%1$d priorities</item>
+    </plurals>
+    <string name="filter_any_date">Any date</string>
+    <string name="filter_overdue">Overdue</string>
+    <string name="filter_next_7_days">Next 7 days</string>
+    <string name="filter_no_date">No date</string>
+    <string name="filter_clear">Clear filters</string>
+
     <!-- Task detail -->
     <string name="task_title_hint">Title</string>
     <string name="notes">Notes</string>

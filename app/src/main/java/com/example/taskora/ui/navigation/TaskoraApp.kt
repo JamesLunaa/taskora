@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
 import com.example.taskora.domain.model.TaskList
+import com.example.taskora.ui.search.SearchScreen
 import com.example.taskora.ui.taskdetail.TaskDetailScreen
 import com.example.taskora.ui.tasks.TaskListScreen
 import kotlinx.serialization.Serializable
@@ -16,6 +17,9 @@ data class TaskListRoute(val listId: Long = TaskList.INBOX_ID)
 
 @Serializable
 data class TaskDetailRoute(val taskId: Long)
+
+@Serializable
+data object SearchRoute
 
 /** Reminder notifications open `taskora://task/{taskId}`. */
 const val TASK_DEEP_LINK_BASE = "taskora://task"
@@ -28,11 +32,18 @@ fun TaskoraApp() {
             TaskListScreen(
                 onTaskClick = { navController.navigate(TaskDetailRoute(it)) },
                 // Switching lists replaces the current list screen instead of stacking up.
+                onSearch = { navController.navigate(SearchRoute) },
                 onOpenList = { listId ->
                     navController.navigate(TaskListRoute(listId)) {
                         popUpTo<TaskListRoute> { inclusive = true }
                     }
                 },
+            )
+        }
+        composable<SearchRoute> {
+            SearchScreen(
+                onBack = { navController.navigateUp() },
+                onTaskClick = { navController.navigate(TaskDetailRoute(it)) },
             )
         }
         composable<TaskDetailRoute>(

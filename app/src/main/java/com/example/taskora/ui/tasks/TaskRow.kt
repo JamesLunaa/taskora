@@ -1,9 +1,12 @@
 package com.example.taskora.ui.tasks
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.CheckBox
@@ -22,13 +25,15 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.taskora.R
+import com.example.taskora.domain.DueStatus
+import com.example.taskora.domain.dueStatus
 import com.example.taskora.domain.model.Priority
 import com.example.taskora.domain.model.Task
-import com.example.taskora.ui.common.DueStatus
+import com.example.taskora.domain.model.TaskList
 import com.example.taskora.ui.common.color
-import com.example.taskora.ui.common.dueStatus
 import com.example.taskora.ui.common.dueText
 import com.example.taskora.ui.common.labelRes
+import com.example.taskora.ui.theme.listColor
 import java.time.LocalDateTime
 
 @Composable
@@ -37,8 +42,10 @@ fun TaskRow(
     onCheckedChange: (Boolean) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Shown in the meta line when tasks from several lists are mixed (search). */
+    list: TaskList? = null,
 ) {
-    val hasMeta = task.dueDate != null || task.subtasks.isNotEmpty() || task.recurrence != null
+    val hasMeta = list != null || task.dueDate != null || task.subtasks.isNotEmpty() || task.recurrence != null
     ListItem(
         modifier = modifier.clickable(onClick = onClick),
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
@@ -59,7 +66,7 @@ fun TaskRow(
             )
         },
         supportingContent = if (hasMeta) {
-            { TaskMeta(task) }
+            { TaskMeta(task, list) }
         } else {
             null
         },
@@ -78,12 +85,25 @@ fun TaskRow(
 }
 
 @Composable
-private fun TaskMeta(task: Task) {
+private fun TaskMeta(task: Task, list: TaskList?) {
     val metaStyle = MaterialTheme.typography.labelMedium
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        list?.let {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Box(
+                    Modifier
+                        .size(8.dp)
+                        .background(listColor(it.color), CircleShape),
+                )
+                Text(it.name, style = metaStyle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
         task.dueDate?.let { date ->
             val overdue = !task.isCompleted &&
                 dueStatus(date, task.dueTime, LocalDateTime.now()) == DueStatus.OVERDUE
