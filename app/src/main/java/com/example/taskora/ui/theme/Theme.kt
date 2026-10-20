@@ -13,7 +13,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColors = darkColorScheme(
+internal val DarkColors = darkColorScheme(
     primary = UbeLamp,
     onPrimary = OnLamp,
     primaryContainer = LampContainer,
@@ -52,7 +52,7 @@ private val DarkColors = darkColorScheme(
     scrim = Color.Black,
 )
 
-private val LightColors = lightColorScheme(
+internal val LightColors = lightColorScheme(
     primary = DayLamp,
     onPrimary = Color.White,
     primaryContainer = DayLampContainer,

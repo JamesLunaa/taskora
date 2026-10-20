@@ -134,6 +134,11 @@
     <string name="filter_no_date">No date</string>
     <string name="filter_clear">Clear filters</string>
 
+    <!-- Widget -->
+    <string name="widget_title">Today</string>
+    <string name="widget_description">Tasks due today and overdue</string>
+    <string name="widget_empty">Nothing due today</string>
+
     <!-- Task detail -->
     <string name="task_title_hint">Title</string>
     <string name="notes">Notes</string>
