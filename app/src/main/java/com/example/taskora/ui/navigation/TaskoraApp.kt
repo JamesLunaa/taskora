@@ -1,41 +1,30 @@
 package com.example.taskora.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.taskora.R
-import com.example.taskora.ui.theme.TaskoraTheme
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.taskora.domain.model.TaskList
+import com.example.taskora.ui.taskdetail.TaskDetailScreen
+import com.example.taskora.ui.tasks.TaskListScreen
+import kotlinx.serialization.Serializable
 
-// Placeholder shell; replaced by the NavHost once the task screens exist.
-@OptIn(ExperimentalMaterial3Api::class)
+// Property names double as SavedStateHandle keys in the ViewModels.
+@Serializable
+data class TaskListRoute(val listId: Long = TaskList.INBOX_ID)
+
+@Serializable
+data class TaskDetailRoute(val taskId: Long)
+
 @Composable
 fun TaskoraApp() {
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("No tasks yet", style = MaterialTheme.typography.bodyLarge)
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = TaskListRoute()) {
+        composable<TaskListRoute> {
+            TaskListScreen(onTaskClick = { navController.navigate(TaskDetailRoute(it)) })
+        }
+        composable<TaskDetailRoute> {
+            TaskDetailScreen(onBack = { navController.navigateUp() })
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun TaskoraAppPreview() {
-    TaskoraTheme { TaskoraApp() }
 }

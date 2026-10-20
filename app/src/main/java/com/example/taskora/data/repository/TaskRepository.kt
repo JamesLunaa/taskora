@@ -25,6 +25,9 @@ interface TaskRepository {
     suspend fun updateTask(task: Task)
     suspend fun setTaskCompleted(id: Long, completed: Boolean)
     suspend fun deleteTask(id: Long)
+
+    /** Puts back a deleted [task] exactly as it was, subtasks included. */
+    suspend fun restoreTask(task: Task)
     suspend fun clearCompleted(listId: Long)
 
     suspend fun addSubtask(taskId: Long, title: String): Long
@@ -63,6 +66,9 @@ class OfflineTaskRepository @Inject constructor(
         taskDao.setCompleted(id, completed, if (completed) Instant.now(clock) else null)
 
     override suspend fun deleteTask(id: Long) = taskDao.deleteById(id)
+
+    override suspend fun restoreTask(task: Task) =
+        taskDao.insertWithSubtasks(task.toEntity(), task.subtasks.map { it.toEntity() })
 
     override suspend fun clearCompleted(listId: Long) = taskDao.deleteCompleted(listId)
 

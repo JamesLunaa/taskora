@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.example.taskora.data.local.entity.SubtaskEntity
 import com.example.taskora.data.local.entity.TaskEntity
 import com.example.taskora.data.local.entity.TaskWithSubtasks
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +30,16 @@ interface TaskDao {
 
     @Insert
     suspend fun insert(task: TaskEntity): Long
+
+    @Insert
+    suspend fun insertSubtasks(subtasks: List<SubtaskEntity>)
+
+    /** Re-inserts a task with its original id and subtasks (used to undo a delete). */
+    @Transaction
+    suspend fun insertWithSubtasks(task: TaskEntity, subtasks: List<SubtaskEntity>) {
+        insert(task)
+        insertSubtasks(subtasks)
+    }
 
     @Update
     suspend fun update(task: TaskEntity)

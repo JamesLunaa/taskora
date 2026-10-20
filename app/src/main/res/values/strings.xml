@@ -1,4 +1,51 @@
 <resources>
     <string name="app_name">Taskora</string>
     <string name="inbox">Inbox</string>
+
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="ok">OK</string>
+    <string name="more_options">More options</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="today">Today</string>
+    <string name="tomorrow">Tomorrow</string>
+
+    <!-- Priority -->
+    <string name="priority">Priority</string>
+    <string name="priority_none">None</string>
+    <string name="priority_low">Low</string>
+    <string name="priority_medium">Medium</string>
+    <string name="priority_high">High</string>
+
+    <!-- Task list -->
+    <string name="add_task">Add task</string>
+    <string name="new_task_hint">What needs doing?</string>
+    <string name="add">Add</string>
+    <string name="no_tasks_title">No tasks yet</string>
+    <string name="no_tasks_hint">Tap + to add one</string>
+    <string name="completed_count">Completed (%1$d)</string>
+    <string name="clear_completed">Clear completed</string>
+    <plurals name="clear_completed_confirm">
+        <item quantity="one">Delete the completed task in this list?</item>
+        <item quantity="other">Delete all %1$d completed tasks in this list?</item>
+    </plurals>
+    <string name="task_deleted">Task deleted</string>
+    <string name="undo">Undo</string>
+    <string name="subtask_progress">%1$d/%2$d</string>
+    <string name="repeats">Repeats</string>
+
+    <!-- Task detail -->
+    <string name="task_title_hint">Title</string>
+    <string name="notes">Notes</string>
+    <string name="add_due_date">Add due date</string>
+    <string name="add_time">Add time</string>
+    <string name="clear_due_date">Clear due date</string>
+    <string name="clear_time">Clear time</string>
+    <string name="subtasks">Subtasks</string>
+    <string name="add_subtask_hint">Add subtask</string>
+    <string name="delete_subtask">Delete subtask</string>
+    <string name="delete_task">Delete task</string>
+    <string name="delete_task_confirm">Delete this task and its subtasks?</string>
 </resources>
