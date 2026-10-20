@@ -59,7 +59,7 @@ For reminders to the minute, also allow **Alarms & reminders** when Taskora asks
 Kotlin, Jetpack Compose with Material 3, Room, Hilt, DataStore, Glance (widget) and Navigation Compose. The project uses a single `:app` module with an MVVM structure:
 
 ```
-app/src/main/java/com/example/taskora/
+app/src/main/java/io/github/jameslunaa/taskora/
 ├── data/        Room database, repositories, settings storage
 ├── domain/      models and pure logic (recurrence, sorting, filters)
 ├── reminders/   alarm scheduling, notifications, receivers
