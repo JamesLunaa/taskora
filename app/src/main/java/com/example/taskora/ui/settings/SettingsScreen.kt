@@ -122,6 +122,10 @@ fun SettingsContent(
                 supportingContent = { Text(appVersion()) },
             )
             ListItem(
+                headlineContent = { Text(stringResource(R.string.license_title)) },
+                supportingContent = { Text(stringResource(R.string.license)) },
+            )
+            ListItem(
                 headlineContent = { Text(stringResource(R.string.font_license_title)) },
                 supportingContent = { Text(stringResource(R.string.font_license)) },
             )
