@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.taskora.data.repository.TaskListRepository
 import com.example.taskora.data.repository.TaskRepository
 import com.example.taskora.domain.model.Priority
+import com.example.taskora.domain.model.Recurrence
 import com.example.taskora.domain.model.Subtask
 import com.example.taskora.domain.model.Task
 import com.example.taskora.domain.model.TaskList
@@ -88,7 +89,15 @@ class TaskDetailViewModel @Inject constructor(
 
     fun setNotes(notes: String) = edit { it.copy(notes = notes) }
 
-    fun setDueDate(date: LocalDate?) = edit { it.copy(dueDate = date, dueTime = if (date == null) null else it.dueTime) }
+    /** Clearing the due date also clears the time and the recurrence, which needs a date. */
+    fun setDueDate(date: LocalDate?) = edit {
+        if (date == null) it.copy(dueDate = null, dueTime = null, recurrence = null) else it.copy(dueDate = date)
+    }
+
+    /** A recurring task needs a due date, so one is set to today if missing. */
+    fun setRecurrence(recurrence: Recurrence?) = edit {
+        it.copy(recurrence = recurrence, dueDate = it.dueDate ?: recurrence?.let { LocalDate.now(clock) })
+    }
 
     fun setDueTime(time: LocalTime?) = edit { if (it.dueDate == null) it else it.copy(dueTime = time) }
 

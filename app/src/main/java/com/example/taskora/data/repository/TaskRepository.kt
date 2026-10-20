@@ -6,6 +6,7 @@ import com.example.taskora.data.local.entity.toDomain
 import com.example.taskora.data.local.entity.toEntity
 import com.example.taskora.domain.model.Subtask
 import com.example.taskora.domain.model.Task
+import com.example.taskora.domain.nextOccurrence
 import com.example.taskora.reminders.ReminderScheduler
 import com.example.taskora.reminders.pendingReminder
 import kotlinx.coroutines.flow.Flow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,8 +26,12 @@ interface TaskRepository {
     /** Inserts [task] (its subtasks are ignored) at the end of its list. */
     suspend fun addTask(task: Task): Long
 
-    /** Updates the task's own fields; subtasks are managed separately. */
+    /**
+     * Updates the task's own fields; subtasks are managed separately. Like [setTaskCompleted],
+     * completing a recurring task here creates its next occurrence.
+     */
     suspend fun updateTask(task: Task)
+    /** Completing a recurring task also creates its next occurrence. */
     suspend fun setTaskCompleted(id: Long, completed: Boolean)
 
     /** Moves the task's reminder to [delay] from now. */
@@ -80,11 +86,28 @@ class OfflineTaskRepository @Inject constructor(
         if (previous?.reminderAt != task.reminderAt || previous?.isCompleted != task.isCompleted) {
             syncReminder(task)
         }
+        if (previous?.isCompleted == false && task.isCompleted) {
+            taskDao.getById(task.id)?.let { createNextOccurrence(it.toDomain()) }
+        }
     }
 
     override suspend fun setTaskCompleted(id: Long, completed: Boolean) {
+        val wasCompleted = taskDao.getById(id)?.task?.isCompleted ?: return
         taskDao.setCompleted(id, completed, if (completed) Instant.now(clock) else null)
-        taskDao.getById(id)?.let { syncReminder(it.toDomain()) }
+        val task = taskDao.getById(id)?.toDomain() ?: return
+        syncReminder(task)
+        if (!wasCompleted && completed) createNextOccurrence(task)
+    }
+
+    private suspend fun createNextOccurrence(completed: Task) {
+        val next = completed.nextOccurrence(LocalDate.now(clock), clock.zone) ?: return
+        // Completing, un-completing and completing again would otherwise stack up copies.
+        if (taskDao.countOpen(next.listId, next.title, checkNotNull(next.dueDate)) > 0) return
+        val id = taskDao.insertNewWithSubtasks(
+            next.copy(createdAt = Instant.now(clock), sortOrder = taskDao.nextSortOrder(next.listId)).toEntity(),
+            next.subtasks.map { it.toEntity() },
+        )
+        syncReminder(next.copy(id = id))
     }
 
     override suspend fun snoozeReminder(id: Long, delay: Duration) {

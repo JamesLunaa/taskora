@@ -1,7 +1,9 @@
 package com.example.taskora.ui.taskdetail
 
 import androidx.lifecycle.SavedStateHandle
+import com.example.taskora.domain.model.Frequency
 import com.example.taskora.domain.model.Priority
+import com.example.taskora.domain.model.Recurrence
 import com.example.taskora.domain.model.Task
 import com.example.taskora.testing.FakeTaskListRepository
 import com.example.taskora.testing.FakeTaskRepository
@@ -109,6 +111,18 @@ class TaskDetailViewModelTest {
         assertEquals(at, stored(id).reminderAt)
         viewModel.setReminder(null)
         assertNull(stored(id).reminderAt)
+    }
+
+    @Test
+    fun setRecurrence_addsDueDateWhenMissing_andClearingDueDateClearsIt() = runTest {
+        val id = repository.addTask(Task(listId = 1, title = "t"))
+        val viewModel = viewModelFor(id)
+        viewModel.setRecurrence(Recurrence(Frequency.DAILY))
+        assertEquals(LocalDate.of(2026, 10, 20), stored(id).dueDate)
+        assertEquals(Frequency.DAILY, stored(id).recurrence?.frequency)
+
+        viewModel.setDueDate(null)
+        assertNull(stored(id).recurrence)
     }
 
     @Test

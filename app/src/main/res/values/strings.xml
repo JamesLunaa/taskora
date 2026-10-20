@@ -70,6 +70,49 @@
     <string name="open_settings">Settings</string>
     <string name="allow">Allow</string>
 
+    <!-- Recurrence -->
+    <string name="repeat">Repeat</string>
+    <string name="clear_repeat">Stop repeating</string>
+    <string name="repeat_never">Never</string>
+    <string name="repeat_daily">Daily</string>
+    <string name="repeat_weekly">Weekly</string>
+    <string name="repeat_monthly">Monthly</string>
+    <string name="repeat_yearly">Yearly</string>
+    <string name="repeat_every">Every</string>
+    <string name="recurrence_on_days">%1$s on %2$s</string>
+    <plurals name="every_n_days">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %1$d days</item>
+    </plurals>
+    <plurals name="every_n_weeks">
+        <item quantity="one">Every week</item>
+        <item quantity="other">Every %1$d weeks</item>
+    </plurals>
+    <plurals name="every_n_months">
+        <item quantity="one">Every month</item>
+        <item quantity="other">Every %1$d months</item>
+    </plurals>
+    <plurals name="every_n_years">
+        <item quantity="one">Every year</item>
+        <item quantity="other">Every %1$d years</item>
+    </plurals>
+    <plurals name="unit_days">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
+    <plurals name="unit_weeks">
+        <item quantity="one">week</item>
+        <item quantity="other">weeks</item>
+    </plurals>
+    <plurals name="unit_months">
+        <item quantity="one">month</item>
+        <item quantity="other">months</item>
+    </plurals>
+    <plurals name="unit_years">
+        <item quantity="one">year</item>
+        <item quantity="other">years</item>
+    </plurals>
+
     <!-- Task detail -->
     <string name="task_title_hint">Title</string>
     <string name="notes">Notes</string>

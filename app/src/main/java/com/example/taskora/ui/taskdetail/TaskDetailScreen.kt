@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -63,12 +64,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.taskora.R
 import com.example.taskora.domain.model.Priority
+import com.example.taskora.domain.model.Recurrence
 import com.example.taskora.domain.model.Subtask
 import com.example.taskora.domain.model.Task
 import com.example.taskora.domain.model.TaskList
 import com.example.taskora.ui.common.color
 import com.example.taskora.ui.common.dueText
 import com.example.taskora.ui.common.labelRes
+import com.example.taskora.ui.common.recurrenceText
 import com.example.taskora.ui.common.timeText
 import com.example.taskora.ui.theme.TaskoraTheme
 import java.time.Instant
@@ -95,6 +98,7 @@ fun TaskDetailScreen(
             onDueDateChange = viewModel::setDueDate,
             onDueTimeChange = viewModel::setDueTime,
             onReminderChange = viewModel::setReminder,
+            onRecurrenceChange = viewModel::setRecurrence,
             onPriorityChange = viewModel::setPriority,
             onListChange = viewModel::moveToList,
             onAddSubtask = viewModel::addSubtask,
@@ -112,6 +116,7 @@ class TaskDetailActions(
     val onDueDateChange: (LocalDate?) -> Unit = {},
     val onDueTimeChange: (LocalTime?) -> Unit = {},
     val onReminderChange: (Instant?) -> Unit = {},
+    val onRecurrenceChange: (Recurrence?) -> Unit = {},
     val onPriorityChange: (Priority) -> Unit = {},
     val onListChange: (Long) -> Unit = {},
     val onAddSubtask: (String) -> Unit = {},
@@ -170,6 +175,7 @@ fun TaskDetailContent(
             )
             ListSection(task.listId, lists, actions.onListChange)
             DueSection(task, actions)
+            RecurrenceSection(task, actions.onRecurrenceChange)
             ReminderSection(task.reminderAt, task.dueDate, task.dueTime, actions.onReminderChange)
             PrioritySection(task.priority, actions.onPriorityChange)
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -310,6 +316,36 @@ private fun DueSection(task: Task, actions: TaskDetailActions) {
             initialTime = task.dueTime,
             onConfirm = actions.onDueTimeChange,
             onDismiss = { showTimePicker = false },
+        )
+    }
+}
+
+@Composable
+private fun RecurrenceSection(task: Task, onRecurrenceChange: (Recurrence?) -> Unit) {
+    var showDialog by rememberSaveable { mutableStateOf(false) }
+    val recurrence = task.recurrence
+    ListItem(
+        modifier = Modifier.clickable { showDialog = true },
+        leadingContent = { Icon(Icons.Outlined.Repeat, contentDescription = null) },
+        headlineContent = {
+            Text(if (recurrence != null) recurrenceText(recurrence) else stringResource(R.string.repeat))
+        },
+        trailingContent = if (recurrence != null) {
+            {
+                IconButton(onClick = { onRecurrenceChange(null) }) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.clear_repeat))
+                }
+            }
+        } else {
+            null
+        },
+    )
+    if (showDialog) {
+        RecurrenceDialog(
+            initial = recurrence,
+            dueDay = (task.dueDate ?: LocalDate.now()).dayOfWeek,
+            onConfirm = onRecurrenceChange,
+            onDismiss = { showDialog = false },
         )
     }
 }

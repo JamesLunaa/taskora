@@ -10,6 +10,7 @@ import com.example.taskora.data.local.entity.TaskEntity
 import com.example.taskora.data.local.entity.TaskWithSubtasks
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
+import java.time.LocalDate
 
 @Dao
 interface TaskDao {
@@ -41,6 +42,14 @@ interface TaskDao {
         insertSubtasks(subtasks)
     }
 
+    /** Inserts a new task and its subtasks (whose taskId is filled in here); returns the task id. */
+    @Transaction
+    suspend fun insertNewWithSubtasks(task: TaskEntity, subtasks: List<SubtaskEntity>): Long {
+        val id = insert(task)
+        insertSubtasks(subtasks.map { it.copy(id = 0, taskId = id) })
+        return id
+    }
+
     @Update
     suspend fun update(task: TaskEntity)
 
@@ -52,6 +61,11 @@ interface TaskDao {
 
     @Query("SELECT * FROM tasks WHERE isCompleted = 0 AND reminderAt > :after")
     suspend fun getWithPendingReminders(after: Instant): List<TaskEntity>
+
+    @Query(
+        "SELECT COUNT(*) FROM tasks WHERE listId = :listId AND title = :title AND dueDate = :dueDate AND isCompleted = 0",
+    )
+    suspend fun countOpen(listId: Long, title: String, dueDate: LocalDate): Int
 
     @Query("DELETE FROM tasks WHERE id = :id")
     suspend fun deleteById(id: Long)
