@@ -29,6 +29,7 @@ import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.updateAll
 import androidx.glance.background
+import androidx.glance.color.ColorProvider as DayNightColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -47,15 +48,21 @@ import androidx.glance.unit.ColorProvider
 import com.example.taskora.MainActivity
 import com.example.taskora.R
 import com.example.taskora.data.repository.TaskRepository
+import com.example.taskora.data.settings.SettingsRepository
 import com.example.taskora.domain.DueStatus
 import com.example.taskora.domain.dueStatus
 import com.example.taskora.domain.dueTodayOrOverdue
 import com.example.taskora.domain.model.Task
+import com.example.taskora.domain.model.ThemeMode
 import com.example.taskora.ui.common.RelativeDayLabels
 import com.example.taskora.ui.common.formatDue
 import com.example.taskora.ui.navigation.TASK_DEEP_LINK_BASE
 import com.example.taskora.ui.theme.DarkColors
+import com.example.taskora.ui.theme.DayField
+import com.example.taskora.ui.theme.DayFieldLilac
+import com.example.taskora.ui.theme.DayOnField
 import com.example.taskora.ui.theme.FieldLilac
+import com.example.taskora.ui.theme.LightColors
 import com.example.taskora.ui.theme.PriceCardInk
 import com.example.taskora.ui.theme.UbeField
 import dagger.hilt.EntryPoint
@@ -71,27 +78,55 @@ import java.time.LocalDateTime
 @InstallIn(SingletonComponent::class)
 interface WidgetEntryPoint {
     fun taskRepository(): TaskRepository
+    fun settingsRepository(): SettingsRepository
 }
 
-private fun Context.taskRepository(): TaskRepository =
-    EntryPointAccessors.fromApplication(applicationContext, WidgetEntryPoint::class.java).taskRepository()
+private fun Context.entryPoint(): WidgetEntryPoint =
+    EntryPointAccessors.fromApplication(applicationContext, WidgetEntryPoint::class.java)
 
-/** Open tasks due today or overdue, across all lists. Always dark, like the app's default. */
+private fun Context.taskRepository(): TaskRepository = entryPoint().taskRepository()
+
+/** Header band colors for the widget, following the theme mode. */
+private class WidgetBand(val background: ColorProvider, val title: ColorProvider, val accent: ColorProvider)
+
+private fun widgetBand(mode: ThemeMode): WidgetBand = when (mode) {
+    ThemeMode.DARK -> WidgetBand(ColorProvider(UbeField), ColorProvider(PriceCardInk), ColorProvider(FieldLilac))
+    ThemeMode.LIGHT -> WidgetBand(ColorProvider(DayField), ColorProvider(DayOnField), ColorProvider(DayFieldLilac))
+    ThemeMode.SYSTEM -> WidgetBand(
+        DayNightColorProvider(day = DayField, night = UbeField),
+        DayNightColorProvider(day = DayOnField, night = PriceCardInk),
+        DayNightColorProvider(day = DayFieldLilac, night = FieldLilac),
+    )
+}
+
+private fun widgetColors(mode: ThemeMode) = when (mode) {
+    ThemeMode.DARK -> ColorProviders(scheme = DarkColors)
+    ThemeMode.LIGHT -> ColorProviders(scheme = LightColors)
+    ThemeMode.SYSTEM -> ColorProviders(light = LightColors, dark = DarkColors)
+}
+
+/**
+ * Open tasks due today or overdue, across all lists. Follows the theme mode setting but always
+ * uses the Taskora palette (no wallpaper colors).
+ */
 class TodayWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = context.taskRepository()
-        val initial = repository.observeAllTasks().first()
+        val settingsRepository = context.entryPoint().settingsRepository()
+        val initialTasks = repository.observeAllTasks().first()
+        val initialSettings = settingsRepository.settings.first()
         provideContent {
             // Live while the session runs; WidgetUpdater restarts it after it ends.
-            val tasks by remember { repository.observeAllTasks() }.collectAsState(initial)
-            GlanceTheme(colors = ColorProviders(scheme = DarkColors)) {
-                Content(tasks.dueTodayOrOverdue(LocalDate.now()))
+            val tasks by remember { repository.observeAllTasks() }.collectAsState(initialTasks)
+            val settings by remember { settingsRepository.settings }.collectAsState(initialSettings)
+            GlanceTheme(colors = widgetColors(settings.themeMode)) {
+                Content(tasks.dueTodayOrOverdue(LocalDate.now()), widgetBand(settings.themeMode))
             }
         }
     }
 
     @Composable
-    private fun Content(tasks: List<Task>) {
+    private fun Content(tasks: List<Task>, band: WidgetBand) {
         val context = LocalContext.current
         Column(
             modifier = GlanceModifier
@@ -99,7 +134,7 @@ class TodayWidget : GlanceAppWidget() {
                 .background(GlanceTheme.colors.widgetBackground)
                 .cornerRadius(20.dp),
         ) {
-            Header(count = tasks.size, onClick = actionStartActivity(openAppIntent(context)))
+            Header(count = tasks.size, band = band, onClick = actionStartActivity(openAppIntent(context)))
             if (tasks.isEmpty()) {
                 Box(modifier = GlanceModifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
                     Text(
@@ -117,12 +152,12 @@ class TodayWidget : GlanceAppWidget() {
 
     /** Tapping the header opens the app. */
     @Composable
-    private fun Header(count: Int, onClick: Action) {
+    private fun Header(count: Int, band: WidgetBand, onClick: Action) {
         val context = LocalContext.current
         Row(
             modifier = GlanceModifier
                 .fillMaxWidth()
-                .background(ColorProvider(UbeField))
+                .background(band.background)
                 .padding(horizontal = 16.dp, vertical = 10.dp)
                 .clickable(onClick),
             verticalAlignment = Alignment.CenterVertically,
@@ -130,12 +165,12 @@ class TodayWidget : GlanceAppWidget() {
             Text(
                 context.getString(R.string.widget_title),
                 modifier = GlanceModifier.defaultWeight(),
-                style = TextStyle(color = ColorProvider(PriceCardInk), fontSize = 16.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(color = band.title, fontSize = 16.sp, fontWeight = FontWeight.Bold),
             )
             if (count > 0) {
                 Text(
                     count.toString(),
-                    style = TextStyle(color = ColorProvider(FieldLilac), fontSize = 14.sp),
+                    style = TextStyle(color = band.accent, fontSize = 14.sp),
                 )
             }
         }

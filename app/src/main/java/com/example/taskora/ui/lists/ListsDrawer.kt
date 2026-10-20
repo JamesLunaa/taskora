@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +40,7 @@ fun ListsDrawer(
     selectedListId: Long?,
     onListClick: (TaskList) -> Unit,
     onNewList: () -> Unit,
+    onSettings: () -> Unit,
 ) {
     ModalDrawerSheet {
         LazyColumn {
@@ -86,6 +88,13 @@ fun ListsDrawer(
                     selected = false,
                     onClick = onNewList,
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                )
+                NavigationDrawerItem(
+                    label = { Text(stringResource(R.string.settings)) },
+                    selected = false,
+                    onClick = onSettings,
+                    icon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                 )
                 Spacer(Modifier.height(12.dp))

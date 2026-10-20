@@ -77,6 +77,7 @@ fun TaskListScreen(
     onTaskClick: (Long) -> Unit,
     onOpenList: (Long) -> Unit,
     onSearch: () -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: TaskListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -105,6 +106,7 @@ fun TaskListScreen(
             onDeleteList = viewModel::deleteList,
             onSortModeChange = viewModel::setSortMode,
             onSearch = onSearch,
+            onOpenSettings = onOpenSettings,
         ),
     )
 }
@@ -122,6 +124,7 @@ class TaskListActions(
     val onDeleteList: () -> Unit = {},
     val onSortModeChange: (TaskSortMode) -> Unit = {},
     val onSearch: () -> Unit = {},
+    val onOpenSettings: () -> Unit = {},
 )
 
 private enum class TaskListDialog { NONE, CLEAR_COMPLETED, NEW_LIST, EDIT_LIST, DELETE_LIST, SORT }
@@ -166,6 +169,10 @@ fun TaskListContent(
                 onNewList = {
                     scope.launch { drawerState.close() }
                     dialog = TaskListDialog.NEW_LIST
+                },
+                onSettings = {
+                    scope.launch { drawerState.close() }
+                    actions.onOpenSettings()
                 },
             )
         },
