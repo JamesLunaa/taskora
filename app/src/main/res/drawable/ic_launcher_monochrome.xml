@@ -1,0 +1,24 @@
+<!-- Themed icon (Android 13+): outline of the logo's note with its check mark. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="108dp"
+        android:height="108dp"
+        android:viewportWidth="108"
+        android:viewportHeight="108">
+    <path
+            android:pathData="M41,32H67A9,9 0,0 1,76 41V67A9,9 0,0 1,67 76H41A9,9 0,0 1,32 67V41A9,9 0,0 1,41 32Z"
+            android:strokeWidth="4"
+            android:strokeColor="#FFFFFFFF"
+            android:fillColor="#00000000" />
+    <path
+            android:pathData="M40,43H54M40,51H50"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:strokeColor="#FFFFFFFF" />
+    <path
+            android:pathData="M45,61L52,68L68,48"
+            android:strokeWidth="5"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeColor="#FFFFFFFF"
+            android:fillColor="#00000000" />
+</vector>

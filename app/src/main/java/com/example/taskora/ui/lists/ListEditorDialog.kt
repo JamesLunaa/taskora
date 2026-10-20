@@ -43,6 +43,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.example.taskora.R
+import com.example.taskora.ui.theme.NightGround
+import com.example.taskora.ui.theme.TaskoraTheme
+import com.example.taskora.ui.theme.listColor
 
 /** Creates a list when [isNew], otherwise edits one. */
 @Composable
@@ -106,11 +109,13 @@ fun ListEditorDialog(
 @Composable
 private fun ColorSwatch(color: Int, selected: Boolean, onClick: () -> Unit) {
     val description = stringResource(R.string.list_color)
+    // Glyphs are night-ground on dark tiles and white on day tiles.
+    val glyph = if (TaskoraTheme.colors.isDark) NightGround else Color.White
     Box(
         modifier = Modifier
             .size(36.dp)
             .clip(CircleShape)
-            .background(Color(color))
+            .background(listColor(color))
             .then(
                 if (selected) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier,
             )
@@ -121,6 +126,6 @@ private fun ColorSwatch(color: Int, selected: Boolean, onClick: () -> Unit) {
             },
         contentAlignment = Alignment.Center,
     ) {
-        if (selected) Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White)
+        if (selected) Icon(Icons.Filled.Check, contentDescription = null, tint = glyph)
     }
 }

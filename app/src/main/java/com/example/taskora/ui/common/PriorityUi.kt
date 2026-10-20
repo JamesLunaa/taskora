@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.example.taskora.R
 import com.example.taskora.domain.model.Priority
+import com.example.taskora.ui.theme.TaskoraTheme
 
 @get:StringRes
 val Priority.labelRes: Int
@@ -16,10 +17,10 @@ val Priority.labelRes: Int
         Priority.HIGH -> R.string.priority_high
     }
 
+// Lamp purple is kept for the screen's main action, so LOW stays neutral.
 @Composable
 fun Priority.color(): Color = when (this) {
-    Priority.NONE -> MaterialTheme.colorScheme.onSurfaceVariant
-    Priority.LOW -> MaterialTheme.colorScheme.primary
-    Priority.MEDIUM -> MaterialTheme.colorScheme.tertiary
+    Priority.NONE, Priority.LOW -> MaterialTheme.colorScheme.onSurfaceVariant
+    Priority.MEDIUM -> TaskoraTheme.colors.warning
     Priority.HIGH -> MaterialTheme.colorScheme.error
 }

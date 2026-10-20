@@ -14,6 +14,7 @@ data class TaskList(
     companion object {
         /** Created with the database and can't be deleted. */
         const val INBOX_ID = 1L
-        const val DEFAULT_COLOR = 0xFF4F5BD5.toInt()
+        // "Blue" from the category palette (ui/theme/Color.kt).
+        const val DEFAULT_COLOR = 0xFF5B8DEF.toInt()
     }
 }

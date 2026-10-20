@@ -1,7 +1,10 @@
 package com.example.taskora.ui.lists
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,12 +23,15 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.taskora.R
 import com.example.taskora.domain.model.TaskList
+import com.example.taskora.ui.theme.listColor
 
 @Composable
 fun ListsDrawer(
@@ -37,11 +43,18 @@ fun ListsDrawer(
     ModalDrawerSheet {
         LazyColumn {
             item {
-                Text(
-                    stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.titleLarge,
+                Row(
                     modifier = Modifier.padding(horizontal = 28.dp, vertical = 20.dp),
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Image(
+                        painterResource(R.drawable.taskora_logo),
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
+                    )
+                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge)
+                }
             }
             items(lists, key = { it.id }) { list ->
                 NavigationDrawerItem(
@@ -50,13 +63,13 @@ fun ListsDrawer(
                     onClick = { onListClick(list) },
                     icon = {
                         if (list.isInbox) {
-                            Icon(Icons.Outlined.Inbox, contentDescription = null, tint = Color(list.color))
+                            Icon(Icons.Outlined.Inbox, contentDescription = null, tint = listColor(list.color))
                         } else {
                             Box(
                                 Modifier
                                     .padding(4.dp)
                                     .size(16.dp)
-                                    .background(Color(list.color), CircleShape),
+                                    .background(listColor(list.color), CircleShape),
                             )
                         }
                     },

@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.Taskora" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/night_ground</item>
+        <item name="android:windowSplashScreenBackground">@color/night_ground</item>
+    </style>
+</resources>

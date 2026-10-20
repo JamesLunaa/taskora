@@ -62,6 +62,7 @@ import com.example.taskora.domain.model.Priority
 import com.example.taskora.domain.model.Task
 import com.example.taskora.domain.model.TaskList
 import com.example.taskora.domain.model.TaskSortMode
+import com.example.taskora.ui.common.headerBandTopAppBarColors
 import com.example.taskora.ui.lists.ListColors
 import com.example.taskora.ui.lists.ListEditorDialog
 import com.example.taskora.ui.lists.ListsDrawer
@@ -169,6 +170,7 @@ fun TaskListContent(
             topBar = {
                 TopAppBar(
                     title = { Text(uiState.list?.name.orEmpty()) },
+                    colors = headerBandTopAppBarColors(),
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.open_lists))
@@ -185,7 +187,12 @@ fun TaskListContent(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = { showAddSheet = true }) {
+                // The screen's one lamp-purple action.
+                FloatingActionButton(
+                    onClick = { showAddSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
                     Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_task))
                 }
             },

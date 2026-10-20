@@ -70,10 +70,12 @@ import com.example.taskora.domain.model.Task
 import com.example.taskora.domain.model.TaskList
 import com.example.taskora.ui.common.color
 import com.example.taskora.ui.common.dueText
+import com.example.taskora.ui.common.headerBandTopAppBarColors
 import com.example.taskora.ui.common.labelRes
 import com.example.taskora.ui.common.recurrenceText
 import com.example.taskora.ui.common.timeText
 import com.example.taskora.ui.theme.TaskoraTheme
+import com.example.taskora.ui.theme.listColor
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -139,6 +141,7 @@ fun TaskDetailContent(
         topBar = {
             TopAppBar(
                 title = {},
+                colors = headerBandTopAppBarColors(),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
@@ -239,7 +242,7 @@ private fun ListSection(listId: Long, lists: List<TaskList>, onListChange: (Long
                     Modifier
                         .padding(4.dp)
                         .size(16.dp)
-                        .background(Color(current.color), CircleShape),
+                        .background(listColor(current.color), CircleShape),
                 )
             },
             overlineContent = { Text(stringResource(R.string.list)) },
