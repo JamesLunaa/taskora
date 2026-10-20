@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -7,8 +9,18 @@ plugins {
     alias(libs.plugins.room)
 }
 
+// Release signing comes from keystore.properties (git-ignored; keys: storeFile, storePassword,
+// keyAlias, keyPassword). Without it, release builds are left unsigned.
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+// Output files are named taskora-<buildType>.apk (e.g. taskora-release.apk).
+base.archivesName = "taskora"
+
 android {
-    namespace = "com.example.taskora"
+    namespace = "io.github.jameslunaa.taskora"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -16,19 +28,32 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.taskora"
+        applicationId = "io.github.jameslunaa.taskora"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (!keystoreProperties.isEmpty) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {
