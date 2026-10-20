@@ -6,6 +6,10 @@
 
 <p align="center">A free, open-source to-do list app for Android. Offline, no account, no ads.</p>
 
+<p align="center">
+  <img src="docs/taskora-demo.gif" alt="Taskora demo: adding a task, completing it from a reminder, and ticking it off from the home screen widget" width="640">
+</p>
+
 ---
 
 ## Features
