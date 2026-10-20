@@ -38,6 +38,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.taskora.R
+import com.example.taskora.reminders.BackgroundRestrictions
 import com.example.taskora.ui.common.dueText
 import java.time.Instant
 import java.time.LocalDate
@@ -50,7 +51,8 @@ private enum class ReminderStep { NONE, DATE, TIME }
 
 /**
  * Picks a reminder as date then time. Asks for the notification permission when a reminder is
- * set, and warns when notifications are off or alarms can't be exact.
+ * set, and warns (most serious first) when notifications are off, when the phone may delete
+ * alarms of background apps, or when alarms can't be exact.
  */
 @Composable
 fun ReminderSection(
@@ -68,9 +70,11 @@ fun ReminderSection(
     // Re-checked on resume, since both can be changed in system settings.
     var notificationsEnabled by remember { mutableStateOf(true) }
     var exactAlarmsAllowed by remember { mutableStateOf(true) }
+    var backgroundRestricted by remember { mutableStateOf(false) }
     LifecycleResumeEffect(Unit) {
         notificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
         exactAlarmsAllowed = canScheduleExactAlarms(context)
+        backgroundRestricted = BackgroundRestrictions.mayBlockReminders(context)
         onPauseOrDispose {}
     }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -112,6 +116,13 @@ fun ReminderSection(
                             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
                     )
                 },
+            )
+            // Worse than late alarms: these phones delete them outright.
+            backgroundRestricted -> ReminderWarning(
+                text = stringResource(R.string.reminders_blocked_in_background),
+                action = stringResource(R.string.fix),
+                isError = true,
+                onAction = { context.startActivity(BackgroundRestrictions.settingsIntent(context)) },
             )
             !exactAlarmsAllowed && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> ReminderWarning(
                 text = stringResource(R.string.reminders_may_be_late),

@@ -66,6 +66,8 @@
     <string name="remind_me">Remind me</string>
     <string name="clear_reminder">Clear reminder</string>
     <string name="notifications_off">Notifications are off, so this reminder won\'t show.</string>
+    <string name="reminders_blocked_in_background">Your phone may block reminders while Taskora is in the background. Allow its background battery use.</string>
+    <string name="fix">Fix</string>
     <string name="reminders_may_be_late">Reminders may arrive a few minutes late.</string>
     <string name="open_settings">Settings</string>
     <string name="allow">Allow</string>
