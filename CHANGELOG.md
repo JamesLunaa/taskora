@@ -31,5 +31,3 @@ First public release.
 - The widget can't add tasks yet. Tapping its header opens the app.
 - On some phones, reminders only arrive once Taskora is allowed to use the battery in the background. The app shows a warning with a Fix button when this applies.
 
-[Unreleased]: https://github.com/JamesLunaa/taskora/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/JamesLunaa/taskora/releases/tag/v1.0.0
