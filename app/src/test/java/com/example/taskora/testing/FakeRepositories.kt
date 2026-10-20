@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 
 class FakeTaskListRepository(
@@ -64,6 +65,11 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
 
     override suspend fun setTaskCompleted(id: Long, completed: Boolean) =
         modify(id) { it.copy(isCompleted = completed, completedAt = if (completed) Instant.now(clock) else null) }
+
+    override suspend fun snoozeReminder(id: Long, delay: Duration) =
+        modify(id) { it.copy(reminderAt = Instant.now(clock).plus(delay)) }
+
+    override suspend fun rescheduleReminders() = Unit
 
     override suspend fun deleteTask(id: Long) = tasks.update { all -> all.filterNot { it.id == id } }
 

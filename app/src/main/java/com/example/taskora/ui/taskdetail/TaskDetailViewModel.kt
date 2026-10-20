@@ -92,6 +92,8 @@ class TaskDetailViewModel @Inject constructor(
 
     fun setDueTime(time: LocalTime?) = edit { if (it.dueDate == null) it else it.copy(dueTime = time) }
 
+    fun setReminder(at: Instant?) = edit { it.copy(reminderAt = at) }
+
     fun setPriority(priority: Priority) = edit { it.copy(priority = priority) }
 
     fun moveToList(listId: Long) = edit { it.copy(listId = listId) }

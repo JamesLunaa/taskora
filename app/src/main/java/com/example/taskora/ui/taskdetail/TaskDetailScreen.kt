@@ -71,6 +71,7 @@ import com.example.taskora.ui.common.dueText
 import com.example.taskora.ui.common.labelRes
 import com.example.taskora.ui.common.timeText
 import com.example.taskora.ui.theme.TaskoraTheme
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -93,6 +94,7 @@ fun TaskDetailScreen(
             onCompletedChange = viewModel::setCompleted,
             onDueDateChange = viewModel::setDueDate,
             onDueTimeChange = viewModel::setDueTime,
+            onReminderChange = viewModel::setReminder,
             onPriorityChange = viewModel::setPriority,
             onListChange = viewModel::moveToList,
             onAddSubtask = viewModel::addSubtask,
@@ -109,6 +111,7 @@ class TaskDetailActions(
     val onCompletedChange: (Boolean) -> Unit = {},
     val onDueDateChange: (LocalDate?) -> Unit = {},
     val onDueTimeChange: (LocalTime?) -> Unit = {},
+    val onReminderChange: (Instant?) -> Unit = {},
     val onPriorityChange: (Priority) -> Unit = {},
     val onListChange: (Long) -> Unit = {},
     val onAddSubtask: (String) -> Unit = {},
@@ -167,6 +170,7 @@ fun TaskDetailContent(
             )
             ListSection(task.listId, lists, actions.onListChange)
             DueSection(task, actions)
+            ReminderSection(task.reminderAt, task.dueDate, task.dueTime, actions.onReminderChange)
             PrioritySection(task.priority, actions.onPriorityChange)
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SubtaskSection(task.subtasks, actions)

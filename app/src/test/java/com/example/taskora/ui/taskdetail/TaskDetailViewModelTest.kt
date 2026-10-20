@@ -101,6 +101,17 @@ class TaskDetailViewModelTest {
     }
 
     @Test
+    fun setReminder_savesAndClears() = runTest {
+        val id = repository.addTask(Task(listId = 1, title = "t"))
+        val viewModel = viewModelFor(id)
+        val at = now.plusSeconds(600)
+        viewModel.setReminder(at)
+        assertEquals(at, stored(id).reminderAt)
+        viewModel.setReminder(null)
+        assertNull(stored(id).reminderAt)
+    }
+
+    @Test
     fun completing_setsCompletedAt() = runTest {
         val id = repository.addTask(Task(listId = 1, title = "t"))
         val viewModel = viewModelFor(id)

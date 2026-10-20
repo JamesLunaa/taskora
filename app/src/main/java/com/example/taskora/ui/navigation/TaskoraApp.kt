@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import com.example.taskora.domain.model.TaskList
 import com.example.taskora.ui.taskdetail.TaskDetailScreen
 import com.example.taskora.ui.tasks.TaskListScreen
@@ -15,6 +16,9 @@ data class TaskListRoute(val listId: Long = TaskList.INBOX_ID)
 
 @Serializable
 data class TaskDetailRoute(val taskId: Long)
+
+/** Reminder notifications open `taskora://task/{taskId}`. */
+const val TASK_DEEP_LINK_BASE = "taskora://task"
 
 @Composable
 fun TaskoraApp() {
@@ -31,7 +35,9 @@ fun TaskoraApp() {
                 },
             )
         }
-        composable<TaskDetailRoute> {
+        composable<TaskDetailRoute>(
+            deepLinks = listOf(navDeepLink<TaskDetailRoute>(basePath = TASK_DEEP_LINK_BASE)),
+        ) {
             TaskDetailScreen(onBack = { navController.navigateUp() })
         }
     }
