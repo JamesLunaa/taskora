@@ -21,7 +21,15 @@ fun TaskoraApp() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = TaskListRoute()) {
         composable<TaskListRoute> {
-            TaskListScreen(onTaskClick = { navController.navigate(TaskDetailRoute(it)) })
+            TaskListScreen(
+                onTaskClick = { navController.navigate(TaskDetailRoute(it)) },
+                // Switching lists replaces the current list screen instead of stacking up.
+                onOpenList = { listId ->
+                    navController.navigate(TaskListRoute(listId)) {
+                        popUpTo<TaskListRoute> { inclusive = true }
+                    }
+                },
+            )
         }
         composable<TaskDetailRoute> {
             TaskDetailScreen(onBack = { navController.navigateUp() })

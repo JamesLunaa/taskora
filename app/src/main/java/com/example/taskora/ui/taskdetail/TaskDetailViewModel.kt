@@ -3,10 +3,12 @@ package com.example.taskora.ui.taskdetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.taskora.data.repository.TaskListRepository
 import com.example.taskora.data.repository.TaskRepository
 import com.example.taskora.domain.model.Priority
 import com.example.taskora.domain.model.Subtask
 import com.example.taskora.domain.model.Task
+import com.example.taskora.domain.model.TaskList
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +32,8 @@ data class TaskDetailUiState(
     val isLoading: Boolean = true,
     /** The task being edited; its subtasks come straight from the database. */
     val task: Task? = null,
+    /** Lists the task can be moved to. */
+    val lists: List<TaskList> = emptyList(),
     /** True once the task is gone (deleted here, or missing); the screen should close. */
     val isClosed: Boolean = false,
 )
@@ -38,6 +42,7 @@ data class TaskDetailUiState(
 class TaskDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val taskRepository: TaskRepository,
+    taskListRepository: TaskListRepository,
     private val clock: Clock,
 ) : ViewModel() {
     // Key matches the TaskDetailRoute property name.
@@ -52,11 +57,13 @@ class TaskDetailViewModel @Inject constructor(
     val uiState: StateFlow<TaskDetailUiState> = combine(
         draft,
         taskRepository.observeTask(taskId).map { it?.subtasks.orEmpty() },
+        taskListRepository.observeLists(),
         closed,
-    ) { task, subtasks, isClosed ->
+    ) { task, subtasks, lists, isClosed ->
         TaskDetailUiState(
             isLoading = task == null && !isClosed,
             task = task?.copy(subtasks = subtasks),
+            lists = lists,
             isClosed = isClosed,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskDetailUiState())
@@ -86,6 +93,8 @@ class TaskDetailViewModel @Inject constructor(
     fun setDueTime(time: LocalTime?) = edit { if (it.dueDate == null) it else it.copy(dueTime = time) }
 
     fun setPriority(priority: Priority) = edit { it.copy(priority = priority) }
+
+    fun moveToList(listId: Long) = edit { it.copy(listId = listId) }
 
     fun setCompleted(completed: Boolean) = edit {
         it.copy(isCompleted = completed, completedAt = if (completed) Instant.now(clock) else null)

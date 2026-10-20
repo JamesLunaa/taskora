@@ -1,7 +1,9 @@
 package com.example.taskora.ui.taskdetail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -9,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +27,8 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -41,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,6 +65,7 @@ import com.example.taskora.R
 import com.example.taskora.domain.model.Priority
 import com.example.taskora.domain.model.Subtask
 import com.example.taskora.domain.model.Task
+import com.example.taskora.domain.model.TaskList
 import com.example.taskora.ui.common.color
 import com.example.taskora.ui.common.dueText
 import com.example.taskora.ui.common.labelRes
@@ -77,6 +85,7 @@ fun TaskDetailScreen(
     }
     TaskDetailContent(
         task = uiState.task,
+        lists = uiState.lists,
         onBack = onBack,
         actions = TaskDetailActions(
             onTitleChange = viewModel::setTitle,
@@ -85,6 +94,7 @@ fun TaskDetailScreen(
             onDueDateChange = viewModel::setDueDate,
             onDueTimeChange = viewModel::setDueTime,
             onPriorityChange = viewModel::setPriority,
+            onListChange = viewModel::moveToList,
             onAddSubtask = viewModel::addSubtask,
             onSubtaskCompletedChange = viewModel::setSubtaskCompleted,
             onDeleteSubtask = viewModel::deleteSubtask,
@@ -100,6 +110,7 @@ class TaskDetailActions(
     val onDueDateChange: (LocalDate?) -> Unit = {},
     val onDueTimeChange: (LocalTime?) -> Unit = {},
     val onPriorityChange: (Priority) -> Unit = {},
+    val onListChange: (Long) -> Unit = {},
     val onAddSubtask: (String) -> Unit = {},
     val onSubtaskCompletedChange: (Subtask, Boolean) -> Unit = { _, _ -> },
     val onDeleteSubtask: (Subtask) -> Unit = {},
@@ -110,6 +121,7 @@ class TaskDetailActions(
 @Composable
 fun TaskDetailContent(
     task: Task?,
+    lists: List<TaskList>,
     onBack: () -> Unit,
     actions: TaskDetailActions,
 ) {
@@ -153,6 +165,7 @@ fun TaskDetailContent(
                 minLines = 3,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             )
+            ListSection(task.listId, lists, actions.onListChange)
             DueSection(task, actions)
             PrioritySection(task.priority, actions.onPriorityChange)
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -201,6 +214,38 @@ private fun TitleRow(task: Task, actions: TaskDetailActions) {
                 unfocusedIndicatorColor = Color.Transparent,
             ),
         )
+    }
+}
+
+@Composable
+private fun ListSection(listId: Long, lists: List<TaskList>, onListChange: (Long) -> Unit) {
+    val current = lists.find { it.id == listId } ?: return
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        ListItem(
+            modifier = Modifier.clickable { expanded = true },
+            leadingContent = {
+                Box(
+                    Modifier
+                        .padding(4.dp)
+                        .size(16.dp)
+                        .background(Color(current.color), CircleShape),
+                )
+            },
+            overlineContent = { Text(stringResource(R.string.list)) },
+            headlineContent = { Text(current.name) },
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            lists.forEach { list ->
+                DropdownMenuItem(
+                    text = { Text(list.name) },
+                    onClick = {
+                        expanded = false
+                        onListChange(list.id)
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -363,6 +408,7 @@ private fun TaskDetailPreview() {
                     Subtask(id = 2, taskId = 1, title = "Hotel"),
                 ),
             ),
+            lists = listOf(TaskList(id = 1, name = "Inbox", color = TaskList.DEFAULT_COLOR)),
             onBack = {},
             actions = TaskDetailActions(),
         )

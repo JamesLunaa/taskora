@@ -36,6 +36,28 @@
     <string name="subtask_progress">%1$d/%2$d</string>
     <string name="repeats">Repeats</string>
 
+    <!-- Lists -->
+    <string name="open_lists">Open lists</string>
+    <string name="new_list">New list</string>
+    <string name="edit_list">Edit list</string>
+    <string name="delete_list">Delete list</string>
+    <string name="list_name">Name</string>
+    <string name="list_color">List color</string>
+    <string name="create">Create</string>
+    <string name="save">Save</string>
+    <plurals name="delete_list_confirm">
+        <item quantity="one">Delete \u201c%1$s\u201d and its %2$d task?</item>
+        <item quantity="other">Delete \u201c%1$s\u201d and its %2$d tasks?</item>
+    </plurals>
+    <string name="list">List</string>
+
+    <!-- Sorting -->
+    <string name="sort_by">Sort by</string>
+    <string name="sort_created">Date created</string>
+    <string name="sort_due_date">Due date</string>
+    <string name="sort_priority">Priority</string>
+    <string name="sort_title">Title</string>
+
     <!-- Task detail -->
     <string name="task_title_hint">Title</string>
     <string name="notes">Notes</string>

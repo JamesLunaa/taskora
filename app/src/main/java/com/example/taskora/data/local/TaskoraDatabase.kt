@@ -1,5 +1,6 @@
 package com.example.taskora.data.local
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -14,7 +15,10 @@ import com.example.taskora.domain.model.TaskList
 
 @Database(
     entities = [TaskListEntity::class, TaskEntity::class, SubtaskEntity::class],
-    version = 1,
+    version = 2,
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2), // task_lists.sortMode
+    ],
 )
 @TypeConverters(Converters::class)
 abstract class TaskoraDatabase : RoomDatabase() {

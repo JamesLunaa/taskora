@@ -3,6 +3,7 @@ package com.example.taskora.ui.taskdetail
 import androidx.lifecycle.SavedStateHandle
 import com.example.taskora.domain.model.Priority
 import com.example.taskora.domain.model.Task
+import com.example.taskora.testing.FakeTaskListRepository
 import com.example.taskora.testing.FakeTaskRepository
 import com.example.taskora.testing.MainDispatcherRule
 import kotlinx.coroutines.flow.collect
@@ -31,7 +32,12 @@ class TaskDetailViewModelTest {
     private val repository = FakeTaskRepository(clock)
 
     private suspend fun TestScope.viewModelFor(taskId: Long): TaskDetailViewModel {
-        val viewModel = TaskDetailViewModel(SavedStateHandle(mapOf("taskId" to taskId)), repository, clock)
+        val viewModel = TaskDetailViewModel(
+            SavedStateHandle(mapOf("taskId" to taskId)),
+            repository,
+            FakeTaskListRepository(),
+            clock,
+        )
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
         return viewModel
     }
@@ -84,6 +90,14 @@ class TaskDetailViewModelTest {
         viewModel.setDueDate(null)
         assertNull(stored(id).dueDate)
         assertNull(stored(id).dueTime)
+    }
+
+    @Test
+    fun moveToList_changesListId() = runTest {
+        val id = repository.addTask(Task(listId = 1, title = "t"))
+        val viewModel = viewModelFor(id)
+        viewModel.moveToList(2)
+        assertEquals(2L, stored(id).listId)
     }
 
     @Test

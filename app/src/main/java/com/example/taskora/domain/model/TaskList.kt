@@ -6,6 +6,7 @@ data class TaskList(
     /** ARGB color. */
     val color: Int,
     val sortOrder: Int = 0,
+    val sortMode: TaskSortMode = TaskSortMode.CREATED,
     val activeTaskCount: Int = 0,
 ) {
     val isInbox: Boolean get() = id == INBOX_ID
