@@ -235,4 +235,16 @@ class TaskListViewModelTest {
         viewModel.deleteList()
         assertEquals(1, listRepository.lists.value.size)
     }
+
+    @Test
+    fun reorder_inAComputedSortMode_switchesTheListToMyOrder() = runWithState {
+        viewModel.addTask("b")
+        viewModel.addTask("a")
+        viewModel.setSortMode(TaskSortMode.TITLE, true)
+        val shown = viewModel.uiState.value.activeTasks
+        viewModel.reorder(listOf(shown[1].id, shown[0].id))
+        val state = viewModel.uiState.value
+        assertEquals(TaskSortMode.MANUAL, state.list?.sortMode)
+        assertEquals(listOf(shown[1].title, shown[0].title), titles(state.activeTasks))
+    }
 }

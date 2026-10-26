@@ -147,9 +147,15 @@ class TaskListViewModel @Inject constructor(
         viewModelScope.launch { taskRepository.moveTasks(ids, targetListId) }
     }
 
-    /** Persists a drag; [orderedIds] is the list's active tasks in their new order. */
+    /** Persists a drag; [orderedIds] is the list's active tasks in their new order, which becomes "My order". */
     fun reorder(orderedIds: List<Long>) {
-        viewModelScope.launch { taskRepository.reorderTasks(orderedIds) }
+        val list = uiState.value.list
+        viewModelScope.launch {
+            taskRepository.reorderTasks(orderedIds)
+            if (list != null && list.sortMode != TaskSortMode.MANUAL) {
+                taskListRepository.updateList(list.copy(sortMode = TaskSortMode.MANUAL))
+            }
+        }
     }
 
     // Selection

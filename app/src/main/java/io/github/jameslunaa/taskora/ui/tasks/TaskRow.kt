@@ -49,8 +49,6 @@ fun TaskRow(
     onLongClick: (() -> Unit)? = null,
     /** Highlights the row while it's picked in selection mode. */
     selected: Boolean = false,
-    /** A drag handle shown at the end of the row (manual order only). */
-    dragHandle: (@Composable () -> Unit)? = null,
 ) {
     val hasFlag = task.priority != Priority.NONE && !task.isCompleted
     val hasMeta = list != null || task.dueDate != null || task.subtasks.isNotEmpty() || task.recurrence != null
@@ -84,18 +82,13 @@ fun TaskRow(
         } else {
             null
         },
-        trailingContent = if (hasFlag || dragHandle != null) {
+        trailingContent = if (hasFlag) {
             {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (hasFlag) {
-                        Icon(
-                            Icons.Filled.Flag,
-                            contentDescription = stringResource(task.priority.labelRes),
-                            tint = task.priority.color(),
-                        )
-                    }
-                    dragHandle?.invoke()
-                }
+                Icon(
+                    Icons.Filled.Flag,
+                    contentDescription = stringResource(task.priority.labelRes),
+                    tint = task.priority.color(),
+                )
             }
         } else {
             null

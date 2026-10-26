@@ -60,7 +60,6 @@
     <string name="sort_ascending">Ascending</string>
     <string name="sort_descending">Descending</string>
     <string name="done">Done</string>
-    <string name="drag_to_reorder">Drag to reorder</string>
 
     <!-- All tasks, task actions, selection -->
     <string name="all_tasks">All tasks</string>

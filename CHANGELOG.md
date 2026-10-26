@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Multi-select**: pick several tasks and set their due date (Today, Tomorrow, a chosen date or none), change priority, complete, move or delete them together.
 - **Today and Tomorrow chips** for the due date on the task screen.
 - **Sort direction**: sort each list ascending or descending.
-- **Drag to reorder**: a new "My order" sort mode shows drag handles to arrange tasks by hand.
+- **Drag to reorder**: long-press a task and drag it to a new place. Letting go without moving opens the task actions instead. Dragging switches the list to the new "My order" sort mode.
 - **All tasks** view in the drawer: every task from every list, grouped under the name of its list.
 
 ### Changed

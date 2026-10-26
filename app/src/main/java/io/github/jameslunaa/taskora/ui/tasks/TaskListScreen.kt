@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
@@ -202,12 +201,15 @@ fun TaskListContent(
 
     // Drag order is kept locally while a drag is in progress and saved when the finger lifts.
     val lazyListState = rememberLazyListState()
-    val canDrag = !uiState.isAllTasks && !selecting && uiState.list?.sortMode == TaskSortMode.MANUAL
+    val canDrag = !uiState.isAllTasks && !selecting && uiState.list != null
+    // A long press that never moves is a plain long press, so it opens the actions sheet on release.
+    var moved by remember { mutableStateOf(false) }
     var dragTasks by remember(uiState.activeTasks) { mutableStateOf(uiState.activeTasks) }
     val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
         val fromIndex = dragTasks.indexOfFirst { it.id == from.key }
         val toIndex = dragTasks.indexOfFirst { it.id == to.key }
         if (fromIndex >= 0 && toIndex >= 0) {
+            moved = true
             dragTasks = dragTasks.toMutableList().apply { add(toIndex, removeAt(fromIndex)) }
         }
     }
@@ -348,18 +350,15 @@ fun TaskListContent(
                                         onCheckedChange = { actions.onCheckedChange(task, it) },
                                         onClick = { rowClick(task) },
                                         onLongClick = { rowLongClick(task) },
-                                        dragHandle = if (canDrag) {
-                                            {
-                                                Icon(
-                                                    Icons.Filled.DragHandle,
-                                                    contentDescription = stringResource(R.string.drag_to_reorder),
-                                                    modifier = Modifier.draggableHandle(
-                                                        onDragStopped = { actions.onReorder(dragTasks.map { it.id }) },
-                                                    ),
-                                                )
-                                            }
+                                        modifier = if (canDrag) {
+                                            Modifier.longPressDraggableHandle(
+                                                onDragStarted = { moved = false },
+                                                onDragStopped = {
+                                                    if (moved) actions.onReorder(dragTasks.map { it.id }) else actionTaskId = task.id
+                                                },
+                                            )
                                         } else {
-                                            null
+                                            Modifier
                                         },
                                     )
                                 }
@@ -544,7 +543,6 @@ private fun SwipeToDeleteRow(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     list: TaskList? = null,
-    dragHandle: (@Composable () -> Unit)? = null,
 ) {
     val state = rememberSwipeToDismissBoxState()
     LaunchedEffect(state.currentValue) {
@@ -578,7 +576,6 @@ private fun SwipeToDeleteRow(
             onLongClick = onLongClick,
             selected = selected,
             list = list,
-            dragHandle = dragHandle,
         )
     }
 }
