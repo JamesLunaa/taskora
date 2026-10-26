@@ -1,7 +1,8 @@
 package io.github.jameslunaa.taskora.ui.tasks
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -36,19 +37,32 @@ import io.github.jameslunaa.taskora.ui.common.labelRes
 import io.github.jameslunaa.taskora.ui.theme.listColor
 import java.time.LocalDateTime
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TaskRow(
     task: Task,
     onCheckedChange: (Boolean) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    /** Shown in the meta line when tasks from several lists are mixed (search). */
+    /** Shown in the meta line when tasks from several lists are mixed (search, all tasks). */
     list: TaskList? = null,
+    onLongClick: (() -> Unit)? = null,
+    /** Highlights the row while it's picked in selection mode. */
+    selected: Boolean = false,
+    /** A drag handle shown at the end of the row (manual order only). */
+    dragHandle: (@Composable () -> Unit)? = null,
 ) {
+    val hasFlag = task.priority != Priority.NONE && !task.isCompleted
     val hasMeta = list != null || task.dueDate != null || task.subtasks.isNotEmpty() || task.recurrence != null
     ListItem(
-        modifier = modifier.clickable(onClick = onClick),
-        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        colors = ListItemDefaults.colors(
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        ),
         leadingContent = {
             Checkbox(checked = task.isCompleted, onCheckedChange = onCheckedChange)
         },
@@ -70,13 +84,18 @@ fun TaskRow(
         } else {
             null
         },
-        trailingContent = if (task.priority != Priority.NONE && !task.isCompleted) {
+        trailingContent = if (hasFlag || dragHandle != null) {
             {
-                Icon(
-                    Icons.Filled.Flag,
-                    contentDescription = stringResource(task.priority.labelRes),
-                    tint = task.priority.color(),
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (hasFlag) {
+                        Icon(
+                            Icons.Filled.Flag,
+                            contentDescription = stringResource(task.priority.labelRes),
+                            tint = task.priority.color(),
+                        )
+                    }
+                    dragHandle?.invoke()
+                }
             }
         } else {
             null

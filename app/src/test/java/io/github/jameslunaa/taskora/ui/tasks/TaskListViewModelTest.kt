@@ -1,6 +1,7 @@
 package io.github.jameslunaa.taskora.ui.tasks
 
 import androidx.lifecycle.SavedStateHandle
+import io.github.jameslunaa.taskora.domain.model.Priority
 import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.domain.model.TaskSortMode
@@ -19,6 +20,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 
 class TaskListViewModelTest {
@@ -70,9 +72,9 @@ class TaskListViewModelTest {
     fun deleteThenRestore_bringsTaskBack() = runWithState {
         viewModel.addTask("Buy milk")
         val task = viewModel.uiState.value.activeTasks.single()
-        viewModel.deleteTask(task)
+        viewModel.deleteTasks(listOf(task))
         assertTrue(viewModel.uiState.value.isEmpty)
-        viewModel.restoreTask(task)
+        viewModel.restoreTasks(listOf(task))
         assertEquals(listOf(task), viewModel.uiState.value.activeTasks)
     }
 
@@ -93,7 +95,7 @@ class TaskListViewModelTest {
         viewModel.addTask("b")
         viewModel.addTask("A")
         assertEquals(listOf("b", "A"), viewModel.uiState.value.activeTasks.map(Task::title))
-        viewModel.setSortMode(TaskSortMode.TITLE)
+        viewModel.setSortMode(TaskSortMode.TITLE, false)
         assertEquals(TaskSortMode.TITLE, viewModel.uiState.value.list?.sortMode)
         assertEquals(listOf("A", "b"), viewModel.uiState.value.activeTasks.map(Task::title))
     }
@@ -130,5 +132,107 @@ class TaskListViewModelTest {
     fun deleteList_isIgnoredForInbox() = runWithState {
         viewModel.deleteList()
         assertFalse(viewModel.uiState.value.isListMissing)
+    }
+
+    private fun titles(tasks: List<Task>) = tasks.map(Task::title)
+
+    @Test
+    fun sortDescending_reversesTheMode() = runWithState {
+        viewModel.addTask("b")
+        viewModel.addTask("A")
+        viewModel.setSortMode(TaskSortMode.TITLE, true)
+        assertEquals(listOf("b", "A"), titles(viewModel.uiState.value.activeTasks))
+        assertTrue(viewModel.uiState.value.list!!.sortDescending)
+    }
+
+    @Test
+    fun selection_togglesSelectsAllAndDropsDeletedTasks() = runWithState {
+        viewModel.addTask("one")
+        viewModel.addTask("two")
+        val (one, two) = viewModel.uiState.value.activeTasks
+        assertFalse(viewModel.uiState.value.isSelecting)
+        viewModel.toggleSelection(one.id)
+        assertEquals(setOf(one.id), viewModel.uiState.value.selectedIds)
+        viewModel.selectAll()
+        assertEquals(setOf(one.id, two.id), viewModel.uiState.value.selectedIds)
+        viewModel.deleteTasks(listOf(one))
+        assertEquals(setOf(two.id), viewModel.uiState.value.selectedIds)
+        viewModel.toggleSelection(two.id)
+        assertFalse(viewModel.uiState.value.isSelecting)
+    }
+
+    @Test
+    fun bulkDueDate_setsAndClears_andClearingDropsTimeAndRecurrence() = runWithState {
+        viewModel.addTask("one")
+        viewModel.addTask("two")
+        val ids = viewModel.uiState.value.activeTasks.map { it.id }
+        val tomorrow = LocalDate.of(2026, 10, 21)
+        viewModel.setDueDate(ids, tomorrow)
+        assertEquals(listOf(tomorrow, tomorrow), viewModel.uiState.value.activeTasks.map { it.dueDate })
+        viewModel.setDueDate(ids, null)
+        assertEquals(listOf(null, null), viewModel.uiState.value.activeTasks.map { it.dueDate })
+    }
+
+    @Test
+    fun bulkPriorityAndComplete_applyToEveryId() = runWithState {
+        viewModel.addTask("one")
+        viewModel.addTask("two")
+        val ids = viewModel.uiState.value.activeTasks.map { it.id }
+        viewModel.setPriority(ids, Priority.HIGH)
+        assertTrue(viewModel.uiState.value.activeTasks.all { it.priority == Priority.HIGH })
+        viewModel.setTasksCompleted(ids, true)
+        assertTrue(viewModel.uiState.value.activeTasks.isEmpty())
+        assertEquals(2, viewModel.uiState.value.completedTasks.size)
+    }
+
+    @Test
+    fun moveTasks_leavesTheListAndLandsAtTheEndOfTheTarget() = runWithState {
+        val workId = listRepository.addList("Work", 0)
+        taskRepository.addTask(Task(listId = workId, title = "existing"))
+        viewModel.addTask("one")
+        viewModel.addTask("two")
+        viewModel.moveTasks(viewModel.uiState.value.activeTasks.map { it.id }, workId)
+        assertTrue(viewModel.uiState.value.isEmpty)
+        assertEquals(listOf("existing", "one", "two"), titles(taskRepository.observeTasks(workId).first()))
+    }
+
+    @Test
+    fun reorder_persistsManualOrder() = runWithState {
+        viewModel.addTask("a")
+        viewModel.addTask("b")
+        viewModel.addTask("c")
+        viewModel.setSortMode(TaskSortMode.MANUAL, false)
+        val (a, b, c) = viewModel.uiState.value.activeTasks
+        viewModel.reorder(listOf(c.id, a.id, b.id))
+        assertEquals(listOf("c", "a", "b"), titles(viewModel.uiState.value.activeTasks))
+    }
+
+    @Test
+    fun allTasks_groupsActiveTasksByList_inDrawerOrder_skippingEmptyLists() = runTest {
+        val workId = listRepository.addList("Work", 0)
+        listRepository.addList("Empty", 0)
+        taskRepository.addTask(Task(listId = workId, title = "w1"))
+        taskRepository.addTask(Task(listId = TaskList.INBOX_ID, title = "i1"))
+        taskRepository.addTask(Task(listId = workId, title = "w2"))
+        val done = taskRepository.addTask(Task(listId = workId, title = "done"))
+        taskRepository.setTaskCompleted(done, true)
+        listId = TaskList.ALL_TASKS_ID
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+        val state = viewModel.uiState.value
+        assertTrue(state.isAllTasks)
+        assertFalse(state.isListMissing)
+        assertEquals(listOf("Inbox", "Work"), state.sections.map { it.list?.name })
+        assertEquals(listOf(listOf("i1"), listOf("w1", "w2")), state.sections.map { titles(it.tasks) })
+        assertEquals(listOf("done"), titles(state.completedTasks))
+    }
+
+    @Test
+    fun allTasks_addsNewTasksToTheInbox_andCantDeleteTheView() = runTest {
+        listId = TaskList.ALL_TASKS_ID
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+        viewModel.addTask("new")
+        assertEquals(TaskList.INBOX_ID, taskRepository.tasks.value.single().listId)
+        viewModel.deleteList()
+        assertEquals(1, listRepository.lists.value.size)
     }
 }

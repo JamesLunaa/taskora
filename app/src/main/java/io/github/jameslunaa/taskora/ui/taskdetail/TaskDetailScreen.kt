@@ -284,6 +284,19 @@ private fun DueSection(task: Task, actions: TaskDetailActions) {
             null
         },
     )
+    Row(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        val today = LocalDate.now()
+        listOf(today to R.string.today, today.plusDays(1) to R.string.tomorrow).forEach { (day, label) ->
+            FilterChip(
+                selected = date == day,
+                onClick = { actions.onDueDateChange(day) },
+                label = { Text(stringResource(label)) },
+            )
+        }
+    }
     if (date != null) {
         val time = task.dueTime
         ListItem(

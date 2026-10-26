@@ -60,6 +60,15 @@ interface TaskDao {
     @Query("UPDATE tasks SET isCompleted = :completed, completedAt = :completedAt WHERE id = :id")
     suspend fun setCompleted(id: Long, completed: Boolean, completedAt: Instant?)
 
+    @Query("UPDATE tasks SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun setSortOrder(id: Long, sortOrder: Int)
+
+    /** Gives each task the index of its id in [orderedIds]. */
+    @Transaction
+    suspend fun setSortOrders(orderedIds: List<Long>) {
+        orderedIds.forEachIndexed { index, id -> setSortOrder(id, index) }
+    }
+
     @Query("UPDATE tasks SET reminderAt = :reminderAt WHERE id = :id")
     suspend fun setReminder(id: Long, reminderAt: Instant?)
 

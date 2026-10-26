@@ -14,6 +14,7 @@ data class TaskListEntity(
     val color: Int,
     val sortOrder: Int,
     @ColumnInfo(defaultValue = "CREATED") val sortMode: TaskSortMode = TaskSortMode.CREATED,
+    @ColumnInfo(defaultValue = "0") val sortDescending: Boolean = false,
 )
 
 data class TaskListWithCount(
@@ -27,9 +28,17 @@ fun TaskListEntity.toDomain(activeTaskCount: Int = 0) = TaskList(
     color = color,
     sortOrder = sortOrder,
     sortMode = sortMode,
+    sortDescending = sortDescending,
     activeTaskCount = activeTaskCount,
 )
 
 fun TaskListWithCount.toDomain() = list.toDomain(activeTaskCount)
 
-fun TaskList.toEntity() = TaskListEntity(id = id, name = name, color = color, sortOrder = sortOrder, sortMode = sortMode)
+fun TaskList.toEntity() = TaskListEntity(
+    id = id,
+    name = name,
+    color = color,
+    sortOrder = sortOrder,
+    sortMode = sortMode,
+    sortDescending = sortDescending,
+)
