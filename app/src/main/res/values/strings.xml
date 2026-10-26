@@ -31,7 +31,6 @@
         <item quantity="one">Delete the completed task in this list?</item>
         <item quantity="other">Delete all %1$d completed tasks in this list?</item>
     </plurals>
-    <string name="task_deleted">Task deleted</string>
     <string name="undo">Undo</string>
     <string name="subtask_progress">%1$d/%2$d</string>
     <string name="repeats">Repeats</string>
@@ -57,6 +56,32 @@
     <string name="sort_due_date">Due date</string>
     <string name="sort_priority">Priority</string>
     <string name="sort_title">Title</string>
+    <string name="sort_manual">My order</string>
+    <string name="sort_ascending">Ascending</string>
+    <string name="sort_descending">Descending</string>
+    <string name="done">Done</string>
+
+    <!-- All tasks, task actions, selection -->
+    <string name="all_tasks">All tasks</string>
+    <string name="task_actions">Task actions</string>
+    <string name="select">Select</string>
+    <string name="select_all">Select all</string>
+    <string name="cancel_selection">Cancel selection</string>
+    <plurals name="n_selected">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <plurals name="n_tasks_deleted">
+        <item quantity="one">%d task deleted</item>
+        <item quantity="other">%d tasks deleted</item>
+    </plurals>
+    <string name="pick_date">Pick date\u2026</string>
+    <string name="remove_due_date">Remove due date</string>
+    <string name="no_date">No date</string>
+    <string name="move_to_list">Move to list\u2026</string>
+    <string name="set_priority">Set priority\u2026</string>
+    <string name="mark_complete">Mark complete</string>
+    <string name="mark_incomplete">Mark incomplete</string>
 
     <!-- Reminders -->
     <string name="reminders_channel">Reminders</string>

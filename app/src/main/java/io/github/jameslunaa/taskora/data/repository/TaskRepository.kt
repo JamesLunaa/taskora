@@ -48,6 +48,20 @@ interface TaskRepository {
     suspend fun restoreTask(task: Task)
     suspend fun clearCompleted(listId: Long)
 
+    /** Applies [transform] to each task in [ids] through [updateTask]; unknown ids are skipped. */
+    suspend fun updateTasks(ids: Collection<Long>, transform: (Task) -> Task)
+    suspend fun setTasksCompleted(ids: Collection<Long>, completed: Boolean)
+
+    /** Deletes the tasks and returns them as they were, so the caller can offer an undo. */
+    suspend fun deleteTasks(ids: Collection<Long>): List<Task>
+    suspend fun restoreTasks(tasks: List<Task>)
+
+    /** Moves the tasks to the end of [listId], keeping their relative order. */
+    suspend fun moveTasks(ids: Collection<Long>, listId: Long)
+
+    /** Stores [orderedIds] as the manual order (the first id gets position 0). */
+    suspend fun reorderTasks(orderedIds: List<Long>)
+
     suspend fun addSubtask(taskId: Long, title: String): Long
     suspend fun updateSubtask(subtask: Subtask)
     suspend fun setSubtaskCompleted(id: Long, completed: Boolean)
@@ -139,6 +153,27 @@ class OfflineTaskRepository @Inject constructor(
     }
 
     override suspend fun clearCompleted(listId: Long) = taskDao.deleteCompleted(listId)
+
+    override suspend fun updateTasks(ids: Collection<Long>, transform: (Task) -> Task) {
+        ids.forEach { id -> getTask(id)?.let { updateTask(transform(it)) } }
+    }
+
+    override suspend fun setTasksCompleted(ids: Collection<Long>, completed: Boolean) {
+        ids.forEach { setTaskCompleted(it, completed) }
+    }
+
+    override suspend fun deleteTasks(ids: Collection<Long>): List<Task> =
+        ids.mapNotNull { id -> getTask(id)?.also { deleteTask(id) } }
+
+    override suspend fun restoreTasks(tasks: List<Task>) = tasks.forEach { restoreTask(it) }
+
+    override suspend fun moveTasks(ids: Collection<Long>, listId: Long) {
+        ids.mapNotNull { getTask(it) }
+            .sortedWith(compareBy({ it.listId }, { it.sortOrder }, { it.id }))
+            .forEach { updateTask(it.copy(listId = listId, sortOrder = taskDao.nextSortOrder(listId))) }
+    }
+
+    override suspend fun reorderTasks(orderedIds: List<Long>) = taskDao.setSortOrders(orderedIds)
 
     override suspend fun addSubtask(taskId: Long, title: String): Long =
         subtaskDao.insert(

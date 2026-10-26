@@ -27,4 +27,18 @@ class MigrationTest {
             }
         }
     }
+
+    @Test
+    fun migrate2To3_addsSortDescendingOff() {
+        helper.createDatabase(dbName, 2).use { db ->
+            db.execSQL("INSERT INTO task_lists (id, name, color, sortOrder, sortMode) VALUES (1, 'Inbox', 0, 0, 'TITLE')")
+        }
+        helper.runMigrationsAndValidate(dbName, 3, true).use { db ->
+            db.query("SELECT sortMode, sortDescending FROM task_lists WHERE id = 1").use { cursor ->
+                cursor.moveToFirst()
+                assertEquals("TITLE", cursor.getString(0))
+                assertEquals(0, cursor.getInt(1))
+            }
+        }
+    }
 }

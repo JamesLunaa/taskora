@@ -15,9 +15,10 @@ import io.github.jameslunaa.taskora.domain.model.TaskList
 
 @Database(
     entities = [TaskListEntity::class, TaskEntity::class, SubtaskEntity::class],
-    version = 2,
+    version = 3,
     autoMigrations = [
         AutoMigration(from = 1, to = 2), // task_lists.sortMode
+        AutoMigration(from = 2, to = 3), // task_lists.sortDescending
     ],
 )
 @TypeConverters(Converters::class)

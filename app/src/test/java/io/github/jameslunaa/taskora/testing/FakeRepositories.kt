@@ -80,6 +80,34 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
     override suspend fun clearCompleted(listId: Long) =
         tasks.update { all -> all.filterNot { it.listId == listId && it.isCompleted } }
 
+    override suspend fun updateTasks(ids: Collection<Long>, transform: (Task) -> Task) =
+        tasks.update { all -> all.map { if (it.id in ids) transform(it) else it } }
+
+    override suspend fun setTasksCompleted(ids: Collection<Long>, completed: Boolean) =
+        tasks.update { all ->
+            all.map {
+                if (it.id in ids) it.copy(isCompleted = completed, completedAt = if (completed) Instant.now(clock) else null) else it
+            }
+        }
+
+    override suspend fun deleteTasks(ids: Collection<Long>): List<Task> {
+        val deleted = tasks.value.filter { it.id in ids }
+        tasks.update { all -> all.filterNot { it.id in ids } }
+        return deleted
+    }
+
+    override suspend fun restoreTasks(tasks: List<Task>) = this.tasks.update { it + tasks }
+
+    override suspend fun moveTasks(ids: Collection<Long>, listId: Long) {
+        var next = tasks.value.count { it.listId == listId }
+        tasks.update { all ->
+            all.map { if (it.id in ids) it.copy(listId = listId, sortOrder = next++) else it }
+        }
+    }
+
+    override suspend fun reorderTasks(orderedIds: List<Long>) =
+        tasks.update { all -> all.map { task -> orderedIds.indexOf(task.id).let { if (it >= 0) task.copy(sortOrder = it) else task } } }
+
     override suspend fun addSubtask(taskId: Long, title: String): Long {
         val id = nextSubtaskId++
         modify(taskId) {

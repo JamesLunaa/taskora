@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.AllInbox
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
@@ -39,6 +40,7 @@ fun ListsDrawer(
     lists: List<TaskList>,
     selectedListId: Long?,
     onListClick: (TaskList) -> Unit,
+    onAllTasks: () -> Unit,
     onNewList: () -> Unit,
     onSettings: () -> Unit,
 ) {
@@ -57,6 +59,19 @@ fun ListsDrawer(
                     )
                     Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge)
                 }
+            }
+            item {
+                NavigationDrawerItem(
+                    label = { Text(stringResource(R.string.all_tasks)) },
+                    selected = selectedListId == TaskList.ALL_TASKS_ID,
+                    onClick = onAllTasks,
+                    icon = { Icon(Icons.Outlined.AllInbox, contentDescription = null) },
+                    badge = {
+                        val total = lists.sumOf { it.activeTaskCount }
+                        if (total > 0) Text(total.toString())
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                )
             }
             items(lists, key = { it.id }) { list ->
                 NavigationDrawerItem(
