@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+
+## [1.1.0] - 2026-10-20
+
 ### Added
 
 - **Task actions**: long-press a task for a sheet with Select, Today, Tomorrow, Pick date, Remove due date, priority, Move to list, Mark complete and Delete (with undo).
