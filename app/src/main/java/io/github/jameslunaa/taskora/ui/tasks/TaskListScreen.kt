@@ -1,5 +1,6 @@
 package io.github.jameslunaa.taskora.ui.tasks
 
+import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateDpAsState
@@ -52,6 +53,7 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,7 +61,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -204,6 +208,10 @@ fun TaskListContent(
     val canDrag = !uiState.isAllTasks && !selecting && uiState.list != null
     // A long press that never moves is a plain long press, so it opens the actions sheet on release.
     var moved by remember { mutableStateOf(false) }
+    // The row also sees the release that ends a long press as a tap; that tap must not open the task.
+    var longPressEndedAt by remember { mutableLongStateOf(0L) }
+    var longPressing by remember { mutableStateOf(false) }
+    val haptics = LocalHapticFeedback.current
     var dragTasks by remember(uiState.activeTasks) { mutableStateOf(uiState.activeTasks) }
     val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
         val fromIndex = dragTasks.indexOfFirst { it.id == from.key }
@@ -327,7 +335,10 @@ fun TaskListContent(
                     ),
                 ) {
                     // Rows toggle in selection mode; long-pressing opens the actions sheet otherwise.
-                    fun rowClick(task: Task) = if (selecting) actions.onToggleSelection(task.id) else actions.onTaskClick(task)
+                    fun rowClick(task: Task) {
+                        if (longPressing || SystemClock.uptimeMillis() - longPressEndedAt < 500) return
+                        if (selecting) actions.onToggleSelection(task.id) else actions.onTaskClick(task)
+                    }
                     fun rowLongClick(task: Task) =
                         if (selecting) actions.onToggleSelection(task.id) else actionTaskId = task.id
 
@@ -349,11 +360,19 @@ fun TaskListContent(
                                         onDelete = { delete(listOf(task)) },
                                         onCheckedChange = { actions.onCheckedChange(task, it) },
                                         onClick = { rowClick(task) },
-                                        onLongClick = { rowLongClick(task) },
+                                        // While dragging is possible the drag handle owns the long press:
+                                        // a row long-click would open the sheet before the drag can start.
+                                        onLongClick = if (canDrag) null else ({ rowLongClick(task) }),
                                         modifier = if (canDrag) {
                                             Modifier.longPressDraggableHandle(
-                                                onDragStarted = { moved = false },
+                                                onDragStarted = {
+                                                    moved = false
+                                                    longPressing = true
+                                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                },
                                                 onDragStopped = {
+                                                    longPressing = false
+                                                    longPressEndedAt = SystemClock.uptimeMillis()
                                                     if (moved) actions.onReorder(dragTasks.map { it.id }) else actionTaskId = task.id
                                                 },
                                             )
@@ -540,7 +559,7 @@ private fun SwipeToDeleteRow(
     onDelete: () -> Unit,
     onCheckedChange: (Boolean) -> Unit,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     list: TaskList? = null,
 ) {
