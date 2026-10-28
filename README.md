@@ -52,6 +52,18 @@ cd taskora
 ./gradlew lint
 ```
 
+## Desktop app (Linux, in progress)
+
+An early desktop version lives in `desktop/`, a separate Compose Desktop app with its own Gradle build. It needs JDK 21.
+
+```sh
+cd desktop
+./gradlew run    # start the app
+./gradlew test   # unit, database and UI tests
+```
+
+Data is stored in `$XDG_DATA_HOME/taskora` (usually `~/.local/share/taskora`).
+
 ## Reminders on Xiaomi, vivo, OPPO, Samsung and similar phones
 
 Some phone makers freeze apps in the background and delete their scheduled alarms. When that happens, reminders never fire. On these phones Taskora shows a warning under the reminder with a **Fix** button that opens the app's settings. There, allow unrestricted or background battery use. Each brand names this setting differently; see [dontkillmyapp.com](https://dontkillmyapp.com) for brand-specific steps.

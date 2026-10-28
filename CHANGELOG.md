@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Desktop app for Linux (early preview)** in `desktop/`. Lists, tasks, subtasks, notes, due dates and times, and priorities, laid out as three panes (lists, tasks, task details). Hover over a task to delete it, with undo. Shortcuts: Ctrl+N goes to the new-task field, and Esc closes the details pane. It has its own data on your computer and doesn't connect to the phone yet.
+
 
 ## [1.1.0] - 2026-10-20
 

@@ -1,0 +1,70 @@
+<resources>
+    <string name="app_name">Taskora</string>
+    <string name="inbox">Inbox</string>
+
+    <!-- Common -->
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="ok">OK</string>
+    <string name="close">Close</string>
+    <string name="more_options">More options</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="today">Today</string>
+    <string name="tomorrow">Tomorrow</string>
+
+    <!-- Priority -->
+    <string name="priority">Priority</string>
+    <string name="priority_none">None</string>
+    <string name="priority_low">Low</string>
+    <string name="priority_medium">Medium</string>
+    <string name="priority_high">High</string>
+
+    <!-- Task list -->
+    <string name="new_task_hint">What needs doing?</string>
+    <string name="add">Add</string>
+    <string name="no_tasks_title">No tasks yet</string>
+    <string name="no_tasks_hint">Type above and press Enter to add one</string>
+    <string name="completed_count">Completed (%1$d)</string>
+    <string name="clear_completed">Clear completed</string>
+    <plurals name="clear_completed_confirm">
+        <item quantity="one">Delete the completed task in this list?</item>
+        <item quantity="other">Delete all %1$d completed tasks in this list?</item>
+    </plurals>
+    <string name="undo">Undo</string>
+    <string name="subtask_progress">%1$d/%2$d</string>
+    <string name="repeats">Repeats</string>
+    <string name="delete_task">Delete task</string>
+    <plurals name="n_tasks_deleted">
+        <item quantity="one">%1$d task deleted</item>
+        <item quantity="other">%1$d tasks deleted</item>
+    </plurals>
+
+    <!-- Lists -->
+    <string name="lists">Lists</string>
+    <string name="new_list">New list</string>
+    <string name="edit_list">Edit list</string>
+    <string name="delete_list">Delete list</string>
+    <string name="list_name">Name</string>
+    <string name="list_color">List color</string>
+    <string name="create">Create</string>
+    <string name="save">Save</string>
+    <plurals name="delete_list_confirm">
+        <item quantity="one">Delete “%1$s” and its %2$d task?</item>
+        <item quantity="other">Delete “%1$s” and its %2$d tasks?</item>
+    </plurals>
+    <string name="list">List</string>
+    <string name="all_tasks">All tasks</string>
+
+    <!-- Task detail -->
+    <string name="title">Title</string>
+    <string name="notes">Notes</string>
+    <string name="due_date">Due date</string>
+    <string name="pick_date">Pick date…</string>
+    <string name="remove_due_date">Remove due date</string>
+    <string name="add_time">Add time</string>
+    <string name="remove_time">Remove time</string>
+    <string name="subtasks">Subtasks</string>
+    <string name="add_subtask">Add a subtask</string>
+    <string name="delete_subtask">Delete subtask</string>
+    <string name="created_on">Created %1$s</string>
+</resources>
