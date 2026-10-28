@@ -64,6 +64,13 @@ cd desktop
 
 Data is stored in `$XDG_DATA_HOME/taskora` (usually `~/.local/share/taskora`). Reminders show as desktop notifications through `notify-send` (package `libnotify`) and only fire while Taskora is running. Closing the window keeps it in the system tray; quit from the tray menu or with Ctrl+Q.
 
+### Packages
+
+Every package bundles its own Java runtime, so no Java install is needed to run Taskora.
+
+- **Arch Linux:** `desktop/packaging/arch/PKGBUILD` builds the `desktop-v<version>` tag from source: run `makepkg -si` in that folder.
+- **AppImage, .deb and .rpm:** `desktop/packaging/build-packages.sh [appimage] [deb] [rpm]` writes them to `desktop/build/packages/`. It uses `appimagetool` and `nfpm` from your `PATH`, or downloads pinned, checksum-verified copies into `desktop/build/tools/`. Build these on an older distribution (e.g. Ubuntu 22.04) with a JDK such as Temurin 21, because the bundled runtime links the system libraries of the machine it was built on.
+
 ## Reminders on Xiaomi, vivo, OPPO, Samsung and similar phones
 
 Some phone makers freeze apps in the background and delete their scheduled alarms. When that happens, reminders never fire. On these phones Taskora shows a warning under the reminder with a **Fix** button that opens the app's settings. There, allow unrestricted or background battery use. Each brand names this setting differently; see [dontkillmyapp.com](https://dontkillmyapp.com) for brand-specific steps.

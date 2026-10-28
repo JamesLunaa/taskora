@@ -43,16 +43,49 @@ compose.resources {
     packageOfResClass = "io.github.jameslunaa.taskora.resources"
 }
 
+val toolchainJavaHome: File = javaToolchains
+    .launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+    .get().metadata.installationPath.asFile
+
 compose.desktop {
     application {
         mainClass = "io.github.jameslunaa.taskora.MainKt"
+        // The bundled runtime comes from the build's JDK, so the launcher fix below can copy its `java`.
+        javaHome = toolchainJavaHome.absolutePath
+        // Lets Main set the X11 window class, so desktops match windows to the .desktop entry.
+        jvmArgs += "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED"
+        // packaging/build-packages.sh turns the app image from createDistributable into the
+        // AppImage, .deb and .rpm; packaging/arch/PKGBUILD does the same for Arch.
         nativeDistributions {
-            targetFormats(TargetFormat.Deb, TargetFormat.Rpm)
+            targetFormats(TargetFormat.AppImage)
             packageName = "taskora"
             packageVersion = version.toString()
             description = "Offline to-do and task lists"
             vendor = "Jose Cynon Luna"
+            copyright = "Copyright 2026 Jose Cynon Luna. Licensed under the Apache License, Version 2.0."
             licenseFile.set(rootProject.file("../LICENSE"))
+            modules("java.instrument", "jdk.unsupported")
+            linux {
+                iconFile.set(project.file("packaging/icons/256x256/io.github.jameslunaa.taskora.png"))
+            }
         }
+    }
+}
+
+// jpackage's native launcher forks a helper that aborts while exiting ("pure virtual method
+// called"), leaving a core dump on every start (seen with JDK 21.0.12). The app image starts
+// through packaging/taskora-launcher.sh on the runtime's own `java` instead, which jpackage
+// leaves out of the runtime.
+val appImageDir = layout.buildDirectory.dir("compose/binaries/main/app/taskora")
+val launcherScript = file("packaging/taskora-launcher.sh")
+val toolchainJava = File(toolchainJavaHome, "bin/java")
+// Compose registers its tasks after this script runs, hence matching rather than named.
+tasks.matching { it.name == "createDistributable" }.configureEach {
+    inputs.file(launcherScript)
+    doLast {
+        val image = appImageDir.get().asFile
+        toolchainJava.copyTo(File(image, "lib/runtime/bin/java"), overwrite = true).setExecutable(true, false)
+        launcherScript.copyTo(File(image, "bin/taskora"), overwrite = true).setExecutable(true, false)
+        File(image, "lib/libapplauncher.so").delete()
     }
 }

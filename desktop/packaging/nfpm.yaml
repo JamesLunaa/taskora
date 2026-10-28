@@ -1,0 +1,79 @@
+# .deb and .rpm from the app image (createDistributable), built by build-packages.sh.
+# Paths are relative to desktop/. VERSION comes from the environment.
+name: taskora
+arch: amd64
+platform: linux
+version: ${VERSION}
+release: 1
+section: utils
+priority: optional
+maintainer: Jose Cynon Luna <josecynonluna03@gmail.com>
+description: |
+  Offline to-do and task lists.
+  Lists, subtasks, notes, priorities, due dates, repeating tasks and reminders,
+  kept on your own computer. Ships its own Java runtime.
+vendor: Jose Cynon Luna
+homepage: https://github.com/JamesLunaa/taskora
+license: Apache-2.0
+
+contents:
+  - src: build/compose/binaries/main/app/taskora/
+    dst: /usr/lib/taskora/
+    type: tree
+  - src: /usr/lib/taskora/bin/taskora
+    dst: /usr/bin/taskora
+    type: symlink
+  - src: packaging/io.github.jameslunaa.taskora.desktop
+    dst: /usr/share/applications/io.github.jameslunaa.taskora.desktop
+  - src: packaging/io.github.jameslunaa.taskora.metainfo.xml
+    dst: /usr/share/metainfo/io.github.jameslunaa.taskora.metainfo.xml
+  - src: packaging/icons/16x16/io.github.jameslunaa.taskora.png
+    dst: /usr/share/icons/hicolor/16x16/apps/io.github.jameslunaa.taskora.png
+  - src: packaging/icons/32x32/io.github.jameslunaa.taskora.png
+    dst: /usr/share/icons/hicolor/32x32/apps/io.github.jameslunaa.taskora.png
+  - src: packaging/icons/48x48/io.github.jameslunaa.taskora.png
+    dst: /usr/share/icons/hicolor/48x48/apps/io.github.jameslunaa.taskora.png
+  - src: packaging/icons/64x64/io.github.jameslunaa.taskora.png
+    dst: /usr/share/icons/hicolor/64x64/apps/io.github.jameslunaa.taskora.png
+  - src: packaging/icons/128x128/io.github.jameslunaa.taskora.png
+    dst: /usr/share/icons/hicolor/128x128/apps/io.github.jameslunaa.taskora.png
+  - src: packaging/icons/256x256/io.github.jameslunaa.taskora.png
+    dst: /usr/share/icons/hicolor/256x256/apps/io.github.jameslunaa.taskora.png
+  - src: ../LICENSE
+    dst: /usr/share/doc/taskora/LICENSE
+  - src: ../NOTICE
+    dst: /usr/share/doc/taskora/NOTICE
+  - src: ../licenses/Archivo-OFL.txt
+    dst: /usr/share/doc/taskora/Archivo-OFL.txt
+
+# The bundled Java runtime needs X11, fonts and OpenGL from the system.
+overrides:
+  deb:
+    depends:
+      - libx11-6
+      - libxext6
+      - libxi6
+      - libxrender1
+      - libxtst6
+      - libfreetype6
+      - libfontconfig1
+      - libgl1
+    recommends:
+      - libnotify-bin
+  rpm:
+    # Library names differ between rpm distributions, so these are by soname.
+    depends:
+      - libX11.so.6()(64bit)
+      - libXext.so.6()(64bit)
+      - libXi.so.6()(64bit)
+      - libXrender.so.1()(64bit)
+      - libXtst.so.6()(64bit)
+      - libfreetype.so.6()(64bit)
+      - libfontconfig.so.1()(64bit)
+      - libGL.so.1()(64bit)
+    recommends:
+      - /usr/bin/notify-send
+
+rpm:
+  group: Applications/Productivity
+  summary: Offline to-do and task lists

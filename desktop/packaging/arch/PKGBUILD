@@ -1,0 +1,53 @@
+# Maintainer: Jose Cynon Luna <josecynonluna03@gmail.com>
+# Builds the Taskora desktop app from the desktop-v<version> tag. The app ships the Java
+# runtime from jdk21-openjdk (made with jlink at build time), so it needs no Java installed.
+pkgname=taskora
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Offline to-do and task lists'
+arch=('x86_64')
+url='https://github.com/JamesLunaa/taskora'
+license=('Apache-2.0')
+# The bundled runtime links these from the system (Arch's JDK is built against them).
+depends=(
+  'alsa-lib' 'bash' 'fontconfig' 'freetype2' 'gcc-libs' 'giflib' 'glibc' 'harfbuzz' 'lcms2'
+  'libglvnd' 'libjpeg-turbo' 'libpng' 'libx11' 'libxext' 'libxi' 'libxrender' 'libxtst' 'zlib'
+)
+optdepends=(
+  'libnotify: reminders as desktop notifications (notify-send)'
+  'glib2: following the system light/dark theme (gdbus)'
+)
+makedepends=('git' 'jdk21-openjdk')
+# The runtime and native libraries come prebuilt; stripping them gains little and risks breaking them.
+options=('!strip' '!debug')
+source=("$pkgname::git+$url.git#tag=desktop-v$pkgver")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname/desktop"
+  export JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+  ./gradlew --no-daemon createDistributable
+}
+
+check() {
+  cd "$pkgname/desktop"
+  export JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+  # The UI tests need no display; Compose renders them offscreen.
+  ./gradlew --no-daemon test
+}
+
+package() {
+  cd "$pkgname/desktop"
+  install -d "$pkgdir/usr/lib" "$pkgdir/usr/bin"
+  cp -a build/compose/binaries/main/app/taskora "$pkgdir/usr/lib/taskora"
+  ln -s /usr/lib/taskora/bin/taskora "$pkgdir/usr/bin/taskora"
+
+  local id=io.github.jameslunaa.taskora
+  install -Dm644 "packaging/$id.desktop" -t "$pkgdir/usr/share/applications"
+  install -Dm644 "packaging/$id.metainfo.xml" -t "$pkgdir/usr/share/metainfo"
+  local dir
+  for dir in packaging/icons/*/; do
+    install -Dm644 "$dir$id.png" -t "$pkgdir/usr/share/icons/hicolor/$(basename "$dir")/apps"
+  done
+  install -Dm644 ../LICENSE ../NOTICE ../licenses/Archivo-OFL.txt -t "$pkgdir/usr/share/licenses/$pkgname"
+}

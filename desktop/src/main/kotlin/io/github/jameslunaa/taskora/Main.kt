@@ -55,9 +55,11 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import java.awt.Dimension
 import java.awt.SystemTray
+import java.awt.Toolkit
 import java.io.File
 
 fun main(args: Array<String>) {
+    setWindowClass(XdgAutostart.APP_ID)
     val dataDir = dataDir()
     val database = TaskoraDatabase.create(
         file = File(dataDir, TaskoraDatabase.NAME),
@@ -203,6 +205,20 @@ fun main(args: Array<String>) {
                 },
             )
         }
+    }
+}
+
+/**
+ * AWT names every window's X11 class after the main class. Taskbars and docks match windows to
+ * their .desktop entry by it, so it should be the entry's name. Needs
+ * `--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED` (set in build.gradle.kts); without it the
+ * default name stays.
+ */
+private fun setWindowClass(name: String) {
+    runCatching {
+        val toolkit = Toolkit.getDefaultToolkit()
+        if (toolkit.javaClass.name != "sun.awt.X11.XToolkit") return
+        toolkit.javaClass.getDeclaredField("awtAppClassName").apply { isAccessible = true }.set(null, name)
     }
 }
 

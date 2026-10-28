@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.jameslunaa.taskora</id>
+  <name>Taskora</name>
+  <summary>Offline to-do and task lists</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <developer id="io.github.jameslunaa">
+    <name>Jose Cynon Luna</name>
+  </developer>
+  <description>
+    <p>
+      Taskora keeps your lists and tasks on your own computer: no account and no cloud.
+    </p>
+    <ul>
+      <li>Lists, subtasks, notes, priorities, due dates and repeating tasks</li>
+      <li>Reminders as desktop notifications, with a tray icon</li>
+      <li>Search and filters</li>
+      <li>A sticky note that can stay on top of or below your other windows</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.jameslunaa.taskora.desktop</launchable>
+  <url type="homepage">https://github.com/JamesLunaa/taskora</url>
+  <url type="bugtracker">https://github.com/JamesLunaa/taskora/issues</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-10-28"/>
+  </releases>
+</component>

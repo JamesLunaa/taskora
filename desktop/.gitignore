@@ -1,3 +1,9 @@
 .gradle
 .kotlin
 /build
+
+# makepkg output when packaging/arch/PKGBUILD is built in place
+/packaging/arch/src/
+/packaging/arch/pkg/
+/packaging/arch/taskora/
+/packaging/arch/*.pkg.tar.*

@@ -12,13 +12,13 @@ interface Autostart {
 
 /**
  * The freedesktop way: a `.desktop` entry in `$XDG_CONFIG_HOME/autostart`. [launcher] is the
- * installed app's executable (jpackage sets `jpackage.app-path`); the app starts hidden in the tray.
+ * installed app's executable; the app starts hidden in the tray.
  */
 class XdgAutostart(
     private val autostartDir: File = defaultAutostartDir(),
-    private val launcher: String? = System.getProperty("jpackage.app-path"),
+    private val launcher: String? = installedLauncher(),
 ) : Autostart {
-    private val entry = File(autostartDir, "io.github.jameslunaa.taskora.desktop")
+    private val entry = File(autostartDir, "$APP_ID.desktop")
 
     override val isAvailable: Boolean get() = launcher != null
 
@@ -38,7 +38,7 @@ class XdgAutostart(
             Name=Taskora
             Comment=Offline to-do and task lists
             Exec="${exec.replace("\"", "\\\"")}" $MINIMIZED_ARG
-            Icon=taskora
+            Icon=$APP_ID
             Terminal=false
             X-GNOME-Autostart-enabled=true
             """.trimIndent() + "\n",
@@ -47,6 +47,16 @@ class XdgAutostart(
 
     companion object {
         const val MINIMIZED_ARG = "--minimized"
+
+        /** Also the .desktop entry's name, the icon name and the X11 window class. */
+        const val APP_ID = "io.github.jameslunaa.taskora"
+
+        /**
+         * An AppImage runs from a new mount point each time, so it's the AppImage file itself
+         * (`APPIMAGE`); otherwise jpackage's launcher (`jpackage.app-path`). Null when run from Gradle.
+         */
+        fun installedLauncher(): String? =
+            System.getenv("APPIMAGE")?.takeIf { it.isNotBlank() } ?: System.getProperty("jpackage.app-path")
 
         fun defaultAutostartDir(): File {
             val xdg = System.getenv("XDG_CONFIG_HOME")?.takeIf { it.isNotBlank() }
