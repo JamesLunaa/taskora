@@ -52,7 +52,7 @@ cd taskora
 ./gradlew lint
 ```
 
-## Desktop app (Linux, in progress)
+## Desktop app (Linux and Windows, in progress)
 
 An early desktop version lives in `desktop/`, a separate Compose Desktop app with its own Gradle build. It needs JDK 21.
 
@@ -62,13 +62,14 @@ cd desktop
 ./gradlew test   # unit, database and UI tests
 ```
 
-Data is stored in `$XDG_DATA_HOME/taskora` (usually `~/.local/share/taskora`). Reminders show as desktop notifications through `notify-send` (package `libnotify`) and only fire while Taskora is running. Closing the window keeps it in the system tray; quit from the tray menu or with Ctrl+Q.
+Data is stored in `$XDG_DATA_HOME/taskora` (usually `~/.local/share/taskora`), or `%LOCALAPPDATA%\Taskora` on Windows. Reminders only fire while Taskora is running. On Linux they show as desktop notifications through `notify-send` (package `libnotify`). On Windows they show as tray messages: clicking one opens the task, and there are no Complete or Snooze buttons. Closing the window keeps it in the system tray; quit from the tray menu or with Ctrl+Q.
 
 ### Packages
 
 Every package bundles its own Java runtime, so no Java install is needed to run Taskora.
 
 - **Arch Linux:** `desktop/packaging/arch/PKGBUILD` builds the `desktop-v<version>` tag from source: run `makepkg -si` in that folder.
+- **Windows:** on Windows, run `gradlew.bat packageMsi` in `desktop/`. It writes a per-user installer (no admin rights needed) to `desktop/build/compose/binaries/main/msi/`. Compose downloads the WiX toolset it needs on the first run.
 - **AppImage, .deb and .rpm:** `desktop/packaging/build-packages.sh [appimage] [deb] [rpm]` writes them to `desktop/build/packages/`. It uses `appimagetool` and `nfpm` from your `PATH`, or downloads pinned, checksum-verified copies into `desktop/build/tools/`. Build these on an older distribution (e.g. Ubuntu 22.04) with a JDK such as Temurin 21, because the bundled runtime links the system libraries of the machine it was built on.
 
 ## Reminders on Xiaomi, vivo, OPPO, Samsung and similar phones

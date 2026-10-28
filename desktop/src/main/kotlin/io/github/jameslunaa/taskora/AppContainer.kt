@@ -10,7 +10,7 @@ import io.github.jameslunaa.taskora.reminders.DesktopReminderScheduler
 import io.github.jameslunaa.taskora.reminders.Notifier
 import io.github.jameslunaa.taskora.reminders.ReminderNotifications
 import io.github.jameslunaa.taskora.system.Autostart
-import io.github.jameslunaa.taskora.system.XdgAutostart
+import io.github.jameslunaa.taskora.system.Platform
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,7 +22,7 @@ class AppContainer(
     database: TaskoraDatabase,
     val settingsRepository: SettingsRepository,
     notifier: Notifier,
-    val autostart: Autostart = XdgAutostart(),
+    val autostart: Autostart = Autostart.forThisPlatform(),
     val clock: Clock = Clock.systemDefaultZone(),
     /** Lives as long as the app, for work that outlasts any one screen (reminders). */
     scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
@@ -43,9 +43,19 @@ class AppContainer(
     }
 }
 
-/** Per-user data folder: $XDG_DATA_HOME/taskora, falling back to ~/.local/share/taskora. */
-fun dataDir(): File {
-    val xdg = System.getenv("XDG_DATA_HOME")?.takeIf { it.isNotBlank() }
-    val base = xdg?.let(::File) ?: File(System.getProperty("user.home"), ".local/share")
-    return File(base, "taskora")
+/**
+ * Per-user data folder: `%LOCALAPPDATA%\Taskora` on Windows, otherwise `$XDG_DATA_HOME/taskora`
+ * falling back to `~/.local/share/taskora`.
+ */
+fun dataDir(
+    windows: Boolean = Platform.isWindows,
+    env: (String) -> String? = System::getenv,
+    home: File = File(System.getProperty("user.home")),
+): File {
+    fun variable(name: String) = env(name)?.takeIf { it.isNotBlank() }?.let(::File)
+    return if (windows) {
+        File(variable("LOCALAPPDATA") ?: File(home, "AppData/Local"), "Taskora")
+    } else {
+        File(variable("XDG_DATA_HOME") ?: File(home, ".local/share"), "taskora")
+    }
 }

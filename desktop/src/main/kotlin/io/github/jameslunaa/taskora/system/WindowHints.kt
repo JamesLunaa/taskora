@@ -33,7 +33,8 @@ interface WindowHints {
     }
 
     companion object {
-        fun forThisDesktop(): WindowHints = X11WindowHints.open() ?: None
+        fun forThisDesktop(): WindowHints =
+            (if (Platform.isWindows) Win32WindowHints.open() else X11WindowHints.open()) ?: None
     }
 }
 

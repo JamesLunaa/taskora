@@ -14,13 +14,16 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Notification
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
 import io.github.jameslunaa.taskora.data.local.TaskoraDatabase
 import io.github.jameslunaa.taskora.data.settings.DataStoreSettingsRepository
 import io.github.jameslunaa.taskora.reminders.NotifySendNotifier
+import io.github.jameslunaa.taskora.reminders.TrayNotifier
 import io.github.jameslunaa.taskora.resources.Res
 import io.github.jameslunaa.taskora.resources.app_name
 import io.github.jameslunaa.taskora.resources.inbox
@@ -32,7 +35,8 @@ import io.github.jameslunaa.taskora.domain.model.WindowLevel
 import io.github.jameslunaa.taskora.domain.model.WindowLook
 import io.github.jameslunaa.taskora.resources.sticky_note
 import io.github.jameslunaa.taskora.system.WindowHints
-import io.github.jameslunaa.taskora.system.XdgAutostart
+import io.github.jameslunaa.taskora.system.Autostart
+import io.github.jameslunaa.taskora.system.Platform
 import io.github.jameslunaa.taskora.ui.common.scopedViewModel
 import io.github.jameslunaa.taskora.ui.note.StickyNoteWindow
 import io.github.jameslunaa.taskora.ui.window.ApplyWindowLook
@@ -59,7 +63,7 @@ import java.awt.Toolkit
 import java.io.File
 
 fun main(args: Array<String>) {
-    setWindowClass(XdgAutostart.APP_ID)
+    setWindowClass(Autostart.APP_ID)
     val dataDir = dataDir()
     val database = TaskoraDatabase.create(
         file = File(dataDir, TaskoraDatabase.NAME),
@@ -67,18 +71,20 @@ fun main(args: Array<String>) {
     )
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val settingsRepository = DataStoreSettingsRepository.create(File(dataDir, "settings.preferences_pb"), appScope)
+    val trayAvailable = SystemTray.isSupported()
+    // Windows has no notify-send; its toasts come from the tray icon.
+    val trayNotifier = if (Platform.isWindows) TrayNotifier(isAvailable = trayAvailable) else null
     val container = AppContainer(
         database,
         settingsRepository,
-        NotifySendNotifier(iconPath = notificationIcon(dataDir)?.path),
+        trayNotifier ?: NotifySendNotifier(iconPath = notificationIcon(dataDir)?.path),
         scope = appScope,
     )
     // Alarms only live in memory, so every future reminder is registered again at each start.
     appScope.launch { container.taskRepository.rescheduleReminders() }
 
-    val trayAvailable = SystemTray.isSupported()
     // Autostart launches with --minimized, so the app waits in the tray.
-    val startHidden = XdgAutostart.MINIMIZED_ARG in args && trayAvailable
+    val startHidden = Autostart.MINIMIZED_ARG in args && trayAvailable
     val hints = WindowHints.forThisDesktop()
     // Tasks clicked on the sticky note, to open in the main window.
     val noteOpenRequests = MutableSharedFlow<Long>(extraBufferCapacity = 1)
@@ -104,10 +110,23 @@ fun main(args: Array<String>) {
         LaunchedEffect(Unit) { container.reminders.openRequests.collect { show() } }
 
         if (trayAvailable) {
+            val trayState = rememberTrayState()
+            if (trayNotifier != null) {
+                LaunchedEffect(Unit) {
+                    trayNotifier.messages.collect {
+                        trayState.sendNotification(Notification(it.title, it.body, Notification.Type.Info))
+                    }
+                }
+            }
             Tray(
                 icon = painterResource(Res.drawable.taskora_logo),
+                state = trayState,
                 tooltip = stringResource(Res.string.app_name),
-                onAction = show,
+                // On Windows a click on a reminder's message arrives here too; that opens its task.
+                onAction = {
+                    trayNotifier?.onTrayAction()
+                    show()
+                },
                 menu = {
                     Item(stringResource(Res.string.open_taskora), onClick = show)
                     CheckboxItem(

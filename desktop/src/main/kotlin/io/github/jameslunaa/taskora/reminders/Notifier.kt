@@ -1,8 +1,14 @@
 package io.github.jameslunaa.taskora.reminders
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
+import java.time.Duration
 
 enum class NotificationAction { COMPLETE, SNOOZE, OPEN }
 
@@ -55,5 +61,43 @@ class NotifySendNotifier(private val iconPath: String?) : Notifier {
             "default" -> NotificationAction.OPEN
             else -> null
         }
+    }
+}
+
+/**
+ * Notifications as tray-icon messages, which Windows shows as toasts. They can't carry buttons,
+ * so the only action is opening the task: Windows reports a click on the message as the tray
+ * icon's action, which the tray passes to [onTrayAction]. Main posts [messages] through the tray.
+ */
+class TrayNotifier(
+    override val isAvailable: Boolean,
+    /** How long after a message a tray action still counts as a click on it. */
+    private val clickWindow: Duration = Duration.ofSeconds(15),
+) : Notifier {
+    private val _messages = MutableSharedFlow<NotificationContent>(extraBufferCapacity = 8)
+    val messages: SharedFlow<NotificationContent> = _messages.asSharedFlow()
+
+    /** Completes with true on a click, or false when a newer message replaces it. */
+    private var pendingClick: CompletableDeferred<Boolean>? = null
+
+    /** Returns true if the action was a click on the latest message. */
+    @Synchronized
+    fun onTrayAction(): Boolean {
+        val pending = pendingClick ?: return false
+        pendingClick = null
+        return pending.complete(true)
+    }
+
+    override suspend fun show(content: NotificationContent): NotificationAction? {
+        // Only the latest message can be clicked, since the tray doesn't say which one it was.
+        val click = CompletableDeferred<Boolean>()
+        synchronized(this) {
+            pendingClick?.complete(false)
+            pendingClick = click
+        }
+        _messages.emit(content)
+        val clicked = withTimeoutOrNull(clickWindow.toMillis()) { click.await() }
+        synchronized(this) { if (pendingClick === click) pendingClick = null }
+        return if (clicked == true) NotificationAction.OPEN else null
     }
 }

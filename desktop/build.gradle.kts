@@ -43,6 +43,9 @@ compose.resources {
     packageOfResClass = "io.github.jameslunaa.taskora.resources"
 }
 
+// jpackage only builds packages for the OS it runs on: MSI on Windows, the Linux app image elsewhere.
+val windowsHost = System.getProperty("os.name").startsWith("Windows")
+
 val toolchainJavaHome: File = javaToolchains
     .launcherFor { languageVersion = JavaLanguageVersion.of(21) }
     .get().metadata.installationPath.asFile
@@ -53,12 +56,14 @@ compose.desktop {
         // The bundled runtime comes from the build's JDK, so the launcher fix below can copy its `java`.
         javaHome = toolchainJavaHome.absolutePath
         // Lets Main set the X11 window class, so desktops match windows to the .desktop entry.
-        jvmArgs += "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED"
-        // packaging/build-packages.sh turns the app image from createDistributable into the
+        // Windows' JDK has no sun.awt.X11 and would warn about it.
+        if (!windowsHost) jvmArgs += "--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED"
+        // Linux: packaging/build-packages.sh turns the app image from createDistributable into the
         // AppImage, .deb and .rpm; packaging/arch/PKGBUILD does the same for Arch.
+        // Windows: packageMsi builds the installer (Compose downloads WiX for it).
         nativeDistributions {
-            targetFormats(TargetFormat.AppImage)
-            packageName = "taskora"
+            targetFormats(TargetFormat.AppImage, TargetFormat.Msi)
+            packageName = if (windowsHost) "Taskora" else "taskora"
             packageVersion = version.toString()
             description = "Offline to-do and task lists"
             vendor = "Jose Cynon Luna"
@@ -67,6 +72,17 @@ compose.desktop {
             modules("java.instrument", "jdk.unsupported")
             linux {
                 iconFile.set(project.file("packaging/icons/256x256/io.github.jameslunaa.taskora.png"))
+            }
+            windows {
+                iconFile.set(project.file("packaging/windows/taskora.ico"))
+                // A per-user install needs no admin rights and matches the per-user data folder.
+                perUserInstall = true
+                dirChooser = true
+                menu = true
+                menuGroup = "Taskora"
+                shortcut = true
+                // Never change it: it's how a new MSI finds and replaces the installed version.
+                upgradeUuid = "75c3dbee-8680-40a7-b281-d8c09aba240e"
             }
         }
     }
@@ -80,7 +96,8 @@ val appImageDir = layout.buildDirectory.dir("compose/binaries/main/app/taskora")
 val launcherScript = file("packaging/taskora-launcher.sh")
 val toolchainJava = File(toolchainJavaHome, "bin/java")
 // Compose registers its tasks after this script runs, hence matching rather than named.
-tasks.matching { it.name == "createDistributable" }.configureEach {
+// Windows keeps jpackage's launcher (Taskora.exe).
+tasks.matching { it.name == "createDistributable" && !windowsHost }.configureEach {
     inputs.file(launcherScript)
     doLast {
         val image = appImageDir.get().asFile
