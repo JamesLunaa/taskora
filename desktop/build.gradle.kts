@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.sqlite.bundled)
     implementation(libs.datastore.preferences.core)
     implementation(libs.reorderable)
+    implementation(libs.jna.platform)
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)

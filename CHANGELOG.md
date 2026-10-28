@@ -13,7 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Desktop: **right-click menu** on a task (Today, Tomorrow, pick date, priority, move, complete, delete) and **multi-select** (Ctrl+click, Shift+click for a range) with a bar for bulk changes. Esc clears the selection.
 - Desktop: **system tray** icon. Closing the window keeps Taskora running there so reminders still show; quit from the tray menu or with Ctrl+Q.
 - Desktop: **settings** for theme (Dark, Light, or Follow system, which reads the KDE/GNOME light/dark preference), keeping it in the tray, and **start on login** (installed app only).
-
+- Desktop: **window pinning** from the pin button next to Settings: keep the window always on top, normal, or always below other windows, and set its **opacity**. Always below and opacity work on X11 and on KDE Wayland (through XWayland).
+- Desktop: **sticky note**, a small borderless window with one list's open tasks (or All tasks). Add and tick off tasks there; clicking one opens it in the main window. It has its own pin and opacity, starts pinned on top, and remembers where you left it. Show it from the pin menu or the tray.
 
 ## [1.1.0] - 2026-10-20
 

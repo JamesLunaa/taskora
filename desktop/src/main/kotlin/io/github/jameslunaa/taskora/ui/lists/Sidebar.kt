@@ -58,6 +58,8 @@ fun Sidebar(
     onNewList: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The window's pin menu, next to Settings. */
+    windowButton: @Composable () -> Unit = {},
 ) {
     val itemColors = NavigationDrawerItemDefaults.colors(
         unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -124,6 +126,7 @@ fun Sidebar(
                 Icon(Icons.Outlined.Add, contentDescription = null)
                 Text(stringResource(Res.string.new_list), modifier = Modifier.padding(start = 8.dp))
             }
+            windowButton()
             IconButton(onClick = onSettings) {
                 Icon(Icons.Outlined.Settings, contentDescription = stringResource(Res.string.settings))
             }

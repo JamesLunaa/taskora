@@ -191,4 +191,18 @@
     <string name="mark_complete">Mark complete</string>
     <string name="mark_incomplete">Mark incomplete</string>
     <string name="no_date">No date</string>
+
+    <!-- Window: stacking, opacity, sticky note -->
+    <string name="window_options">Window options</string>
+    <string name="window_level_above">Always on top</string>
+    <string name="window_level_normal">Normal</string>
+    <string name="window_level_below">Always below</string>
+    <string name="window_opacity">Opacity</string>
+    <string name="window_hints_unavailable">Always below and opacity need an X11 or XWayland session.</string>
+    <string name="sticky_note">Sticky note</string>
+    <string name="sticky_note_title">Taskora note</string>
+    <string name="note_choose_list">Choose list</string>
+    <string name="note_empty">Nothing left to do</string>
+    <string name="note_add_hint">Add a task</string>
+    <string name="note_resize">Resize</string>
 </resources>

@@ -48,6 +48,9 @@ import io.github.jameslunaa.taskora.ui.search.SearchViewModel
 import io.github.jameslunaa.taskora.ui.settings.SettingsActions
 import io.github.jameslunaa.taskora.ui.settings.SettingsDialog
 import io.github.jameslunaa.taskora.ui.settings.SettingsViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import java.awt.SystemTray
 import org.jetbrains.compose.resources.getPluralString
@@ -68,7 +71,13 @@ class AppShortcuts {
  * right. The phone's navigation (list -> detail) becomes selection here.
  */
 @Composable
-fun TaskoraApp(container: AppContainer, shortcuts: AppShortcuts) {
+fun TaskoraApp(
+    container: AppContainer,
+    shortcuts: AppShortcuts,
+    /** Tasks to open from outside the window, e.g. the sticky note. */
+    openTaskRequests: Flow<Long> = emptyFlow(),
+    windowButton: @Composable () -> Unit = {},
+) {
     var listId by remember { mutableStateOf(TaskList.INBOX_ID) }
     var taskId by remember { mutableStateOf<Long?>(null) }
     var searching by remember { mutableStateOf(false) }
@@ -85,8 +94,10 @@ fun TaskoraApp(container: AppContainer, shortcuts: AppShortcuts) {
     }
     val listState by listViewModel.uiState.collectAsStateWithLifecycle()
 
-    // "Open" on a reminder notification.
-    LaunchedEffect(Unit) { container.reminders.openRequests.collect { taskId = it } }
+    // "Open" on a reminder notification, or a task clicked on the sticky note.
+    LaunchedEffect(Unit) {
+        merge(container.reminders.openRequests, openTaskRequests).collect { taskId = it }
+    }
 
     LaunchedEffect(listViewModel) {
         listViewModel.events.collect { event ->
@@ -149,6 +160,7 @@ fun TaskoraApp(container: AppContainer, shortcuts: AppShortcuts) {
                 onNewList = { creatingList = true },
                 onSettings = { showSettings = true },
                 modifier = Modifier.width(260.dp),
+                windowButton = windowButton,
             )
             Box(Modifier.weight(1f).fillMaxHeight()) {
                 if (searching) {

@@ -4,6 +4,10 @@ import io.github.jameslunaa.taskora.data.repository.TaskListRepository
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
 import io.github.jameslunaa.taskora.data.settings.SettingsRepository
 import io.github.jameslunaa.taskora.domain.model.AppSettings
+import io.github.jameslunaa.taskora.domain.model.AppWindow
+import io.github.jameslunaa.taskora.domain.model.WindowBounds
+import io.github.jameslunaa.taskora.domain.model.WindowLevel
+import io.github.jameslunaa.taskora.domain.model.WindowLook
 import io.github.jameslunaa.taskora.domain.model.ThemeMode
 import io.github.jameslunaa.taskora.system.Autostart
 import io.github.jameslunaa.taskora.reminders.NotificationAction
@@ -144,6 +148,18 @@ class FakeSettingsRepository : SettingsRepository {
     override val settings = MutableStateFlow(AppSettings())
     override suspend fun setThemeMode(mode: ThemeMode) = settings.update { it.copy(themeMode = mode) }
     override suspend fun setCloseToTray(enabled: Boolean) = settings.update { it.copy(closeToTray = enabled) }
+    override suspend fun setWindowLevel(window: AppWindow, level: WindowLevel) = updateLook(window) { it.copy(level = level) }
+    override suspend fun setWindowOpacity(window: AppWindow, opacity: Float) = updateLook(window) { it.copy(opacity = opacity) }
+    override suspend fun setNoteOpen(open: Boolean) = settings.update { it.copy(note = it.note.copy(isOpen = open)) }
+    override suspend fun setNoteListId(listId: Long) = settings.update { it.copy(note = it.note.copy(listId = listId)) }
+    override suspend fun setNoteBounds(bounds: WindowBounds) = settings.update { it.copy(note = it.note.copy(bounds = bounds)) }
+
+    private fun updateLook(window: AppWindow, change: (WindowLook) -> WindowLook) = settings.update {
+        when (window) {
+            AppWindow.MAIN -> it.copy(mainWindow = change(it.mainWindow))
+            AppWindow.NOTE -> it.copy(noteWindow = change(it.noteWindow))
+        }
+    }
 }
 
 class FakeAutostart(override val isAvailable: Boolean = true) : Autostart {

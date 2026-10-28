@@ -12,6 +12,7 @@ coroutines = "1.10.2"
 datastore = "1.2.1"
 reorderable = "3.1.0"
 junit = "4.13.2"
+jna = "5.19.1"
 
 [libraries]
 compose-material3 = { group = "org.jetbrains.compose.material3", name = "material3", version.ref = "material3" }
@@ -27,6 +28,7 @@ reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.r
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 compose-ui-test-junit4 = { group = "org.jetbrains.compose.ui", name = "ui-test-junit4", version.ref = "composeMultiplatform" }
+jna-platform = { group = "net.java.dev.jna", name = "jna-platform", version.ref = "jna" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]

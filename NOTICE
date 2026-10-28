@@ -9,3 +9,7 @@ licensed under the SIL Open Font License, Version 1.1 (see licenses/Archivo-OFL.
 
 This product uses Compose Reorderable (sh.calvin.reorderable),
 Copyright 2023 Calvin Liang, licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The desktop app uses JNA and JNA Platform (net.java.dev.jna, https://github.com/java-native-access/jna),
+dual-licensed under the Apache License, Version 2.0 and the LGPL 2.1; used under the Apache License,
+Version 2.0 (see LICENSE).
