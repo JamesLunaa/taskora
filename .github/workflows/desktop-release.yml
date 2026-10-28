@@ -1,0 +1,96 @@
+# Builds the desktop app's packages and, for a desktop-v<version> tag, publishes them as a
+# GitHub release. Run it by hand (Actions → Desktop release → Run workflow) to only build them.
+#
+# Linux packages are built on Ubuntu 22.04 with Temurin, so the bundled runtime only needs the
+# libraries every current distribution has (an Arch-built runtime links Arch's own versions).
+name: Desktop release
+
+on:
+  push:
+    tags: ['desktop-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: desktop
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-dependency-path: |
+            desktop/**/*.gradle.kts
+            desktop/gradle/libs.versions.toml
+            desktop/gradle/wrapper/gradle-wrapper.properties
+      - name: Check the tag matches the app version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' build.gradle.kts)
+          [ "desktop-v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME doesn't match version $version in desktop/build.gradle.kts"; exit 1; }
+      - name: Test
+        run: ./gradlew --no-daemon test
+      - name: Build AppImage, .deb and .rpm
+        run: ./packaging/build-packages.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: desktop/build/packages/*
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-dependency-path: |
+            desktop/**/*.gradle.kts
+            desktop/gradle/libs.versions.toml
+            desktop/gradle/wrapper/gradle-wrapper.properties
+      - name: Test
+        run: ./gradlew.bat --no-daemon test
+      # Compose downloads the WiX toolset that jpackage needs for the MSI.
+      - name: Build MSI
+        run: ./gradlew.bat --no-daemon packageMsi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: desktop/build/compose/binaries/main/msi/*.msi
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (cd dist && sha256sum * > SHA256SUMS)
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Taskora desktop ${GITHUB_REF_NAME#desktop-v}" \
+            --notes "Desktop app packages for Linux (AppImage, .deb, .rpm) and Windows (MSI). See CHANGELOG.md for what's new; Arch Linux users can build packaging/arch/PKGBUILD." \
+            --prerelease

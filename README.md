@@ -66,6 +66,8 @@ Data is stored in `$XDG_DATA_HOME/taskora` (usually `~/.local/share/taskora`), o
 
 ### Packages
 
+Pushing a `desktop-v<version>` tag (matching `version` in `desktop/build.gradle.kts`) runs `.github/workflows/desktop-release.yml`. It tests the app, builds the AppImage, .deb and .rpm on Ubuntu 22.04 and the MSI on Windows, and publishes them with checksums as a GitHub pre-release. Running the workflow by hand only builds the packages, which you can download from the run.
+
 Every package bundles its own Java runtime, so no Java install is needed to run Taskora.
 
 - **Arch Linux:** `desktop/packaging/arch/PKGBUILD` builds the `desktop-v<version>` tag from source: run `makepkg -si` in that folder.
