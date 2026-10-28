@@ -39,7 +39,8 @@ download() { # url sha256 file
 }
 
 appimagetool() {
-    if command -v appimagetool >/dev/null; then
+    # type -P searches PATH only; command -v would find this function itself.
+    if type -P appimagetool >/dev/null; then
         command appimagetool "$@"
         return
     fi
@@ -52,7 +53,7 @@ appimagetool() {
 }
 
 nfpm() {
-    if command -v nfpm >/dev/null; then
+    if type -P nfpm >/dev/null; then
         command nfpm "$@"
         return
     fi
