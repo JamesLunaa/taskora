@@ -1,0 +1,212 @@
+<resources>
+    <string name="app_name">Taskora</string>
+    <string name="inbox">Inbox</string>
+
+    <!-- Common -->
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="ok">OK</string>
+    <string name="close">Close</string>
+    <string name="more_options">More options</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="today">Today</string>
+    <string name="tomorrow">Tomorrow</string>
+
+    <!-- Priority -->
+    <string name="priority">Priority</string>
+    <string name="priority_none">None</string>
+    <string name="priority_low">Low</string>
+    <string name="priority_medium">Medium</string>
+    <string name="priority_high">High</string>
+
+    <!-- Task list -->
+    <string name="new_task_hint">What needs doing?</string>
+    <string name="add">Add</string>
+    <string name="no_tasks_title">No tasks yet</string>
+    <string name="no_tasks_hint">Type above and press Enter to add one</string>
+    <string name="completed_count">Completed (%1$d)</string>
+    <string name="clear_completed">Clear completed</string>
+    <plurals name="clear_completed_confirm">
+        <item quantity="one">Delete the completed task in this list?</item>
+        <item quantity="other">Delete all %1$d completed tasks in this list?</item>
+    </plurals>
+    <string name="undo">Undo</string>
+    <string name="subtask_progress">%1$d/%2$d</string>
+    <string name="repeats">Repeats</string>
+    <string name="delete_task">Delete task</string>
+    <plurals name="n_tasks_deleted">
+        <item quantity="one">%1$d task deleted</item>
+        <item quantity="other">%1$d tasks deleted</item>
+    </plurals>
+
+    <!-- Lists -->
+    <string name="lists">Lists</string>
+    <string name="new_list">New list</string>
+    <string name="edit_list">Edit list</string>
+    <string name="delete_list">Delete list</string>
+    <string name="list_name">Name</string>
+    <string name="list_color">List color</string>
+    <string name="create">Create</string>
+    <string name="save">Save</string>
+    <plurals name="delete_list_confirm">
+        <item quantity="one">Delete “%1$s” and its %2$d task?</item>
+        <item quantity="other">Delete “%1$s” and its %2$d tasks?</item>
+    </plurals>
+    <string name="list">List</string>
+    <string name="all_tasks">All tasks</string>
+
+    <!-- Task detail -->
+    <string name="title">Title</string>
+    <string name="notes">Notes</string>
+    <string name="due_date">Due date</string>
+    <string name="pick_date">Pick date…</string>
+    <string name="remove_due_date">Remove due date</string>
+    <string name="add_time">Add time</string>
+    <string name="remove_time">Remove time</string>
+    <string name="subtasks">Subtasks</string>
+    <string name="add_subtask">Add a subtask</string>
+    <string name="delete_subtask">Delete subtask</string>
+    <string name="created_on">Created %1$s</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_system">Follow system</string>
+    <string name="settings_window">Window</string>
+    <string name="close_to_tray">Keep running in the tray</string>
+    <string name="close_to_tray_description">Closing the window hides Taskora in the system tray, so reminders still show</string>
+    <string name="close_to_background">Keep running in the background</string>
+    <string name="close_to_background_description">Your desktop has no system tray. Closing the window keeps Taskora running so reminders still show; open Taskora again to bring it back</string>
+    <string name="use_system_accent">Use system accent color</string>
+    <string name="use_system_accent_description">Buttons and highlights take your desktop’s accent color instead of purple</string>
+    <string name="start_on_login">Start on login</string>
+    <string name="start_on_login_description">Opens Taskora in the tray when you log in</string>
+    <string name="start_on_login_unavailable">Available in the installed app</string>
+    <string name="settings_about">About</string>
+    <string name="version">Version</string>
+    <string name="license_title">License</string>
+    <string name="license">Free and open source under the Apache License 2.0</string>
+    <string name="font_license_title">Archivo font</string>
+    <string name="font_license">Licensed under the SIL Open Font License 1.1</string>
+
+    <!-- Search -->
+    <string name="search">Search</string>
+    <string name="search_hint">Search tasks</string>
+    <string name="clear_search">Clear search</string>
+    <string name="search_empty_hint">Search titles and notes, or pick a filter.</string>
+    <string name="search_no_results">No matching tasks</string>
+    <string name="filter_open">Open</string>
+    <string name="filter_completed">Completed</string>
+    <string name="filter_all_tasks">All tasks</string>
+    <string name="filter_all_lists">All lists</string>
+    <string name="filter_any_priority">Any priority</string>
+    <plurals name="filter_n_priorities">
+        <item quantity="one">%1$d priority</item>
+        <item quantity="other">%1$d priorities</item>
+    </plurals>
+    <string name="filter_any_date">Any date</string>
+    <string name="filter_overdue">Overdue</string>
+    <string name="filter_next_7_days">Next 7 days</string>
+    <string name="filter_no_date">No date</string>
+    <string name="filter_clear">Clear filters</string>
+
+    <!-- Sorting -->
+    <string name="sort_by">Sort by</string>
+    <string name="sort_created">Date created</string>
+    <string name="sort_due_date">Due date</string>
+    <string name="sort_priority">Priority</string>
+    <string name="sort_title">Title</string>
+    <string name="sort_manual">My order</string>
+    <string name="sort_ascending">Ascending</string>
+    <string name="sort_descending">Descending</string>
+    <string name="drag_to_reorder">Drag to reorder</string>
+
+    <!-- Recurrence -->
+    <string name="repeat">Repeat</string>
+    <string name="clear_repeat">Stop repeating</string>
+    <string name="repeat_never">Never</string>
+    <string name="repeat_daily">Daily</string>
+    <string name="repeat_weekly">Weekly</string>
+    <string name="repeat_monthly">Monthly</string>
+    <string name="repeat_yearly">Yearly</string>
+    <string name="repeat_every">Every</string>
+    <string name="recurrence_on_days">%1$s on %2$s</string>
+    <plurals name="every_n_days">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %1$d days</item>
+    </plurals>
+    <plurals name="every_n_weeks">
+        <item quantity="one">Every week</item>
+        <item quantity="other">Every %1$d weeks</item>
+    </plurals>
+    <plurals name="every_n_months">
+        <item quantity="one">Every month</item>
+        <item quantity="other">Every %1$d months</item>
+    </plurals>
+    <plurals name="every_n_years">
+        <item quantity="one">Every year</item>
+        <item quantity="other">Every %1$d years</item>
+    </plurals>
+    <plurals name="unit_days">
+        <item quantity="one">day</item>
+        <item quantity="other">days</item>
+    </plurals>
+    <plurals name="unit_weeks">
+        <item quantity="one">week</item>
+        <item quantity="other">weeks</item>
+    </plurals>
+    <plurals name="unit_months">
+        <item quantity="one">month</item>
+        <item quantity="other">months</item>
+    </plurals>
+    <plurals name="unit_years">
+        <item quantity="one">year</item>
+        <item quantity="other">years</item>
+    </plurals>
+
+    <!-- Reminders -->
+    <string name="reminder">Reminder</string>
+    <string name="remind_me">Remind me</string>
+    <string name="clear_reminder">Clear reminder</string>
+    <string name="reminder_in_past">This time has passed, so no reminder will show.</string>
+    <string name="complete">Complete</string>
+    <string name="snooze">Snooze 10 min</string>
+    <string name="open">Open</string>
+    <string name="notifications_unavailable">Desktop notifications aren’t available (notify-send is missing), so reminders won’t show.</string>
+
+    <!-- Tray -->
+    <string name="open_taskora">Open Taskora</string>
+    <string name="quit">Quit</string>
+
+    <!-- Task actions, selection -->
+    <string name="open_task">Open</string>
+    <string name="select">Select</string>
+    <string name="select_all">Select all</string>
+    <string name="cancel_selection">Cancel selection</string>
+    <plurals name="n_selected">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="move_to_list">Move to list…</string>
+    <string name="set_priority">Set priority…</string>
+    <string name="mark_complete">Mark complete</string>
+    <string name="mark_incomplete">Mark incomplete</string>
+    <string name="no_date">No date</string>
+
+    <!-- Window: stacking, opacity, sticky note -->
+    <string name="window_options">Window options</string>
+    <string name="window_level_above">Always on top</string>
+    <string name="window_level_normal">Normal</string>
+    <string name="window_level_below">Always below</string>
+    <string name="window_opacity">Opacity</string>
+    <string name="window_opacity_unavailable">GNOME doesn’t support window opacity.</string>
+    <string name="window_hints_unavailable">Always below and opacity need an X11 or XWayland session.</string>
+    <string name="sticky_note">Sticky note</string>
+    <string name="sticky_note_title">Taskora note</string>
+    <string name="note_choose_list">Choose list</string>
+    <string name="note_empty">Nothing left to do</string>
+    <string name="note_add_hint">Add a task</string>
+    <string name="note_resize">Resize</string>
+</resources>

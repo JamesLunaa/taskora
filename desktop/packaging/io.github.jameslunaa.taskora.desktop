@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Taskora
+GenericName=Task List
+Comment=Offline to-do and task lists
+Exec=taskora
+Icon=io.github.jameslunaa.taskora
+Terminal=false
+Categories=Office;ProjectManagement;
+Keywords=todo;task;reminder;list;note;
+StartupWMClass=io.github.jameslunaa.taskora
