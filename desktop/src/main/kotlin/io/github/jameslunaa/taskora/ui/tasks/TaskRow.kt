@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -26,7 +27,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -37,6 +42,7 @@ import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.resources.Res
 import io.github.jameslunaa.taskora.resources.delete_task
+import io.github.jameslunaa.taskora.resources.drag_to_reorder
 import io.github.jameslunaa.taskora.resources.repeats
 import io.github.jameslunaa.taskora.resources.subtask_progress
 import io.github.jameslunaa.taskora.ui.common.color
@@ -47,6 +53,7 @@ import org.jetbrains.compose.resources.stringResource
 import java.time.LocalDateTime
 
 /** Hovering shows a delete button, the desktop stand-in for the phone's swipe-to-delete. */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TaskRow(
     task: Task,
@@ -58,6 +65,10 @@ fun TaskRow(
     list: TaskList? = null,
     /** The task open in the detail pane. */
     selected: Boolean = false,
+    /** Makes the row draggable by a handle that shows on hover (from the reorderable item scope). */
+    dragHandle: Modifier? = null,
+    /** Right-click. */
+    onContextMenu: (() -> Unit)? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val hovered by interactionSource.collectIsHoveredAsState()
@@ -66,6 +77,9 @@ fun TaskRow(
     ListItem(
         modifier = modifier
             .hoverable(interactionSource)
+            .onPointerEvent(PointerEventType.Press) {
+                if (it.buttons.isSecondaryPressed) onContextMenu?.invoke()
+            }
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick),
         colors = ListItemDefaults.colors(
             containerColor = when {
@@ -75,7 +89,20 @@ fun TaskRow(
             },
         ),
         leadingContent = {
-            Checkbox(checked = task.isCompleted, onCheckedChange = onCheckedChange)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (dragHandle != null) {
+                    Box(dragHandle.size(24.dp, 40.dp), contentAlignment = Alignment.Center) {
+                        if (hovered) {
+                            Icon(
+                                Icons.Outlined.DragIndicator,
+                                contentDescription = stringResource(Res.string.drag_to_reorder),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+                Checkbox(checked = task.isCompleted, onCheckedChange = onCheckedChange)
+            }
         },
         headlineContent = {
             Text(

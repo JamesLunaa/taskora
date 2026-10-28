@@ -2,6 +2,13 @@ package io.github.jameslunaa.taskora.testing
 
 import io.github.jameslunaa.taskora.data.repository.TaskListRepository
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
+import io.github.jameslunaa.taskora.data.settings.SettingsRepository
+import io.github.jameslunaa.taskora.domain.model.AppSettings
+import io.github.jameslunaa.taskora.domain.model.ThemeMode
+import io.github.jameslunaa.taskora.system.Autostart
+import io.github.jameslunaa.taskora.reminders.NotificationAction
+import io.github.jameslunaa.taskora.reminders.NotificationContent
+import io.github.jameslunaa.taskora.reminders.Notifier
 import io.github.jameslunaa.taskora.domain.model.Subtask
 import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
@@ -131,4 +138,30 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
         tasks.update { all ->
             all.map { task -> task.copy(subtasks = task.subtasks.map { if (it.id == id) transform(it) else it }) }
         }
+}
+
+class FakeSettingsRepository : SettingsRepository {
+    override val settings = MutableStateFlow(AppSettings())
+    override suspend fun setThemeMode(mode: ThemeMode) = settings.update { it.copy(themeMode = mode) }
+    override suspend fun setCloseToTray(enabled: Boolean) = settings.update { it.copy(closeToTray = enabled) }
+}
+
+class FakeAutostart(override val isAvailable: Boolean = true) : Autostart {
+    private var enabled = false
+    override fun isEnabled() = enabled
+    override fun setEnabled(enabled: Boolean) {
+        this.enabled = enabled && isAvailable
+    }
+}
+
+class FakeNotifier(
+    override val isAvailable: Boolean = true,
+    /** What the user "clicks" on each notification. */
+    var answer: NotificationAction? = null,
+) : Notifier {
+    val shown = mutableListOf<NotificationContent>()
+    override suspend fun show(content: NotificationContent): NotificationAction? {
+        shown += content
+        return answer
+    }
 }

@@ -157,6 +157,10 @@ class TaskListViewModel(
 
     fun toggleSelection(id: Long) = selection.update { if (id in it) it - id else it + id }
 
+    fun setSelection(ids: Set<Long>) {
+        selection.value = ids
+    }
+
     fun selectAll() {
         selection.value = uiState.value.activeTasks.mapTo(HashSet()) { it.id }
     }

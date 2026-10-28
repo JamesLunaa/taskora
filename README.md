@@ -62,7 +62,7 @@ cd desktop
 ./gradlew test   # unit, database and UI tests
 ```
 
-Data is stored in `$XDG_DATA_HOME/taskora` (usually `~/.local/share/taskora`).
+Data is stored in `$XDG_DATA_HOME/taskora` (usually `~/.local/share/taskora`). Reminders show as desktop notifications through `notify-send` (package `libnotify`) and only fire while Taskora is running. Closing the window keeps it in the system tray; quit from the tray menu or with Ctrl+Q.
 
 ## Reminders on Xiaomi, vivo, OPPO, Samsung and similar phones
 

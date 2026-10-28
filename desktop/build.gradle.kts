@@ -29,6 +29,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.swing)
     implementation(libs.room.runtime)
     implementation(libs.sqlite.bundled)
+    implementation(libs.datastore.preferences.core)
+    implementation(libs.reorderable)
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)

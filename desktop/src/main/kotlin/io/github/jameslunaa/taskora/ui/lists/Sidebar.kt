@@ -17,8 +17,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
@@ -36,6 +39,8 @@ import io.github.jameslunaa.taskora.resources.all_tasks
 import io.github.jameslunaa.taskora.resources.app_name
 import io.github.jameslunaa.taskora.resources.lists
 import io.github.jameslunaa.taskora.resources.new_list
+import io.github.jameslunaa.taskora.resources.search
+import io.github.jameslunaa.taskora.resources.settings
 import io.github.jameslunaa.taskora.resources.taskora_logo
 import io.github.jameslunaa.taskora.ui.theme.listColor
 import org.jetbrains.compose.resources.painterResource
@@ -45,9 +50,13 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun Sidebar(
     lists: List<TaskList>,
-    selectedListId: Long,
+    /** Null while searching. */
+    selectedListId: Long?,
+    searching: Boolean,
     onSelect: (Long) -> Unit,
+    onSearch: () -> Unit,
     onNewList: () -> Unit,
+    onSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val itemColors = NavigationDrawerItemDefaults.colors(
@@ -81,6 +90,14 @@ fun Sidebar(
             colors = itemColors,
             modifier = Modifier.padding(top = 16.dp),
         )
+        NavigationDrawerItem(
+            label = { Text(stringResource(Res.string.search)) },
+            icon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+            badge = { Text("Ctrl+F", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            selected = searching,
+            onClick = onSearch,
+            colors = itemColors,
+        )
         HorizontalDivider(Modifier.padding(vertical = 8.dp, horizontal = 12.dp))
         Text(
             stringResource(Res.string.lists),
@@ -102,9 +119,14 @@ fun Sidebar(
             }
         }
 
-        TextButton(onClick = onNewList, modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Outlined.Add, contentDescription = null)
-            Text(stringResource(Res.string.new_list), modifier = Modifier.padding(start = 8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onNewList, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Outlined.Add, contentDescription = null)
+                Text(stringResource(Res.string.new_list), modifier = Modifier.padding(start = 8.dp))
+            }
+            IconButton(onClick = onSettings) {
+                Icon(Icons.Outlined.Settings, contentDescription = stringResource(Res.string.settings))
+            }
         }
     }
 }

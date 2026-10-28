@@ -18,6 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
@@ -51,12 +54,21 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.github.jameslunaa.taskora.domain.model.Priority
+import io.github.jameslunaa.taskora.domain.model.Recurrence
 import io.github.jameslunaa.taskora.domain.model.Subtask
 import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.resources.Res
 import io.github.jameslunaa.taskora.resources.add_subtask
 import io.github.jameslunaa.taskora.resources.add_time
+import io.github.jameslunaa.taskora.resources.clear_reminder
+import io.github.jameslunaa.taskora.resources.clear_repeat
+import io.github.jameslunaa.taskora.resources.notifications_unavailable
+import io.github.jameslunaa.taskora.resources.remind_me
+import io.github.jameslunaa.taskora.resources.reminder
+import io.github.jameslunaa.taskora.resources.reminder_in_past
+import io.github.jameslunaa.taskora.resources.repeat
+import io.github.jameslunaa.taskora.resources.repeat_never
 import io.github.jameslunaa.taskora.resources.close
 import io.github.jameslunaa.taskora.resources.created_on
 import io.github.jameslunaa.taskora.resources.delete_subtask
@@ -75,9 +87,12 @@ import io.github.jameslunaa.taskora.resources.tomorrow
 import io.github.jameslunaa.taskora.ui.common.dateText
 import io.github.jameslunaa.taskora.ui.common.dueText
 import io.github.jameslunaa.taskora.ui.common.label
+import io.github.jameslunaa.taskora.ui.common.recurrenceText
 import io.github.jameslunaa.taskora.ui.common.timeText
+import io.github.jameslunaa.taskora.ui.theme.TaskoraTheme
 import io.github.jameslunaa.taskora.ui.theme.listColor
 import org.jetbrains.compose.resources.stringResource
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -91,6 +106,8 @@ class TaskDetailActions(
     val onDueDateChange: (LocalDate?) -> Unit,
     val onDueTimeChange: (LocalTime?) -> Unit,
     val onPriorityChange: (Priority) -> Unit,
+    val onRecurrenceChange: (Recurrence?) -> Unit,
+    val onReminderChange: (Instant?) -> Unit,
     val onAddSubtask: (String) -> Unit,
     val onSubtaskCompletedChange: (Subtask, Boolean) -> Unit,
     val onDeleteSubtask: (Subtask) -> Unit,
@@ -98,11 +115,17 @@ class TaskDetailActions(
     val onClose: () -> Unit,
 )
 
-private enum class PickerDialog { DATE, TIME }
+private enum class PickerDialog { DATE, TIME, REPEAT, REMINDER_DATE, REMINDER_TIME }
 
 /** The right-hand pane for the selected task. Edits save as they're made, as on the phone. */
 @Composable
-fun TaskDetailPane(uiState: TaskDetailUiState, actions: TaskDetailActions, modifier: Modifier = Modifier) {
+fun TaskDetailPane(
+    uiState: TaskDetailUiState,
+    actions: TaskDetailActions,
+    /** False when the desktop can't show notifications, so reminders get a warning. */
+    notificationsAvailable: Boolean,
+    modifier: Modifier = Modifier,
+) {
     val task = uiState.task
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainer)) {
         Row(
@@ -114,14 +137,22 @@ fun TaskDetailPane(uiState: TaskDetailUiState, actions: TaskDetailActions, modif
                 Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.close))
             }
         }
-        if (task != null) TaskDetailContent(task, uiState.lists, actions)
+        if (task != null) TaskDetailContent(task, uiState.lists, actions, notificationsAvailable)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TaskDetailContent(task: Task, lists: List<TaskList>, actions: TaskDetailActions) {
+private fun TaskDetailContent(
+    task: Task,
+    lists: List<TaskList>,
+    actions: TaskDetailActions,
+    notificationsAvailable: Boolean,
+) {
     var picker by remember { mutableStateOf<PickerDialog?>(null) }
+    // The reminder is picked as a date, then a time.
+    var reminderDate by remember { mutableStateOf<LocalDate?>(null) }
+    val zone = ZoneId.systemDefault()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -193,6 +224,57 @@ private fun TaskDetailContent(task: Task, lists: List<TaskList>, actions: TaskDe
             }
         }
 
+        Section(stringResource(Res.string.repeat)) {
+            val recurrence = task.recurrence
+            if (recurrence == null) {
+                AssistChip(
+                    onClick = { picker = PickerDialog.REPEAT },
+                    label = { Text(stringResource(Res.string.repeat_never)) },
+                    leadingIcon = { Icon(Icons.Outlined.Repeat, contentDescription = null) },
+                )
+            } else {
+                RemovableChip(
+                    label = recurrenceText(recurrence),
+                    icon = { Icon(Icons.Outlined.Repeat, contentDescription = null) },
+                    removeLabel = stringResource(Res.string.clear_repeat),
+                    onClick = { picker = PickerDialog.REPEAT },
+                    onRemove = { actions.onRecurrenceChange(null) },
+                )
+            }
+        }
+
+        Section(stringResource(Res.string.reminder)) {
+            val reminder = task.reminderAt
+            if (reminder == null) {
+                AssistChip(
+                    onClick = { picker = PickerDialog.REMINDER_DATE },
+                    label = { Text(stringResource(Res.string.remind_me)) },
+                    leadingIcon = { Icon(Icons.Outlined.NotificationsNone, contentDescription = null) },
+                )
+            } else {
+                val at = reminder.atZone(zone)
+                RemovableChip(
+                    label = dueText(at.toLocalDate(), at.toLocalTime()),
+                    icon = { Icon(Icons.Outlined.Notifications, contentDescription = null) },
+                    removeLabel = stringResource(Res.string.clear_reminder),
+                    onClick = { picker = PickerDialog.REMINDER_DATE },
+                    onRemove = { actions.onReminderChange(null) },
+                )
+                val warning = when {
+                    !notificationsAvailable -> Res.string.notifications_unavailable
+                    !task.isCompleted && reminder.isBefore(Instant.now()) -> Res.string.reminder_in_past
+                    else -> null
+                }
+                if (warning != null) {
+                    Text(
+                        stringResource(warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TaskoraTheme.colors.warning,
+                    )
+                }
+            }
+        }
+
         Section(stringResource(Res.string.priority)) {
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 Priority.entries.forEachIndexed { index, priority ->
@@ -241,6 +323,26 @@ private fun TaskDetailContent(task: Task, lists: List<TaskList>, actions: TaskDe
         PickerDialog.TIME -> DueTimePickerDialog(
             initialTime = task.dueTime,
             onConfirm = actions.onDueTimeChange,
+            onDismiss = { picker = null },
+        )
+        PickerDialog.REPEAT -> RecurrenceDialog(
+            initial = task.recurrence,
+            dueDay = (task.dueDate ?: LocalDate.now(zone)).dayOfWeek,
+            onConfirm = actions.onRecurrenceChange,
+            onDismiss = { picker = null },
+        )
+        PickerDialog.REMINDER_DATE -> DueDatePickerDialog(
+            initialDate = task.reminderAt?.atZone(zone)?.toLocalDate() ?: task.dueDate,
+            onConfirm = {
+                reminderDate = it
+                picker = PickerDialog.REMINDER_TIME
+            },
+            // Confirming also dismisses; only close when the time picker isn't next.
+            onDismiss = { if (picker == PickerDialog.REMINDER_DATE) picker = null },
+        )
+        PickerDialog.REMINDER_TIME -> DueTimePickerDialog(
+            initialTime = task.reminderAt?.atZone(zone)?.toLocalTime() ?: task.dueTime,
+            onConfirm = { time -> reminderDate?.let { actions.onReminderChange(it.atTime(time).atZone(zone).toInstant()) } },
             onDismiss = { picker = null },
         )
         null -> Unit
