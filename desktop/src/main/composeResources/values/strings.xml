@@ -77,7 +77,10 @@
     <string name="settings_window">Window</string>
     <string name="close_to_tray">Keep running in the tray</string>
     <string name="close_to_tray_description">Closing the window hides Taskora in the system tray, so reminders still show</string>
-    <string name="tray_unavailable">Your desktop has no system tray, so closing the window quits Taskora</string>
+    <string name="close_to_background">Keep running in the background</string>
+    <string name="close_to_background_description">Your desktop has no system tray. Closing the window keeps Taskora running so reminders still show; open Taskora again to bring it back</string>
+    <string name="use_system_accent">Use system accent color</string>
+    <string name="use_system_accent_description">Buttons and highlights take your desktop’s accent color instead of purple</string>
     <string name="start_on_login">Start on login</string>
     <string name="start_on_login_description">Opens Taskora in the tray when you log in</string>
     <string name="start_on_login_unavailable">Available in the installed app</string>
@@ -198,6 +201,7 @@
     <string name="window_level_normal">Normal</string>
     <string name="window_level_below">Always below</string>
     <string name="window_opacity">Opacity</string>
+    <string name="window_opacity_unavailable">GNOME doesn’t support window opacity.</string>
     <string name="window_hints_unavailable">Always below and opacity need an X11 or XWayland session.</string>
     <string name="sticky_note">Sticky note</string>
     <string name="sticky_note_title">Taskora note</string>

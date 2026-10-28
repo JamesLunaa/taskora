@@ -1,5 +1,6 @@
 package io.github.jameslunaa.taskora.reminders
 
+import io.github.jameslunaa.taskora.system.Autostart
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -45,6 +46,8 @@ class NotifySendNotifier(private val iconPath: String?) : Notifier {
         val command = buildList {
             add(exe.path)
             add("--app-name=Taskora")
+            // Lets GNOME and KDE tie the notification to Taskora's menu entry and icon.
+            add("--hint=string:desktop-entry:${Autostart.APP_ID}")
             iconPath?.let { add("--icon=$it") }
             add("--action=complete=${content.completeLabel}")
             add("--action=snooze=${content.snoozeLabel}")

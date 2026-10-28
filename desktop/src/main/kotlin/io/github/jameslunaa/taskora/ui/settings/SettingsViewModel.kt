@@ -34,6 +34,10 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setCloseToTray(enabled) }
     }
 
+    fun setUseSystemAccent(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setUseSystemAccent(enabled) }
+    }
+
     fun setAutostart(enabled: Boolean) {
         autostart.setEnabled(enabled)
         _autostartEnabled.value = autostart.isEnabled()

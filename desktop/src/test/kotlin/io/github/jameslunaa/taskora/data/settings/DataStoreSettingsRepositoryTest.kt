@@ -25,13 +25,22 @@ class DataStoreSettingsRepositoryTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
-    private fun runWithRepository(block: suspend (DataStoreSettingsRepository, DataStore<Preferences>) -> Unit) =
-        runTest {
-            val dataStore = PreferenceDataStoreFactory.create(scope = backgroundScope) {
-                tmp.newFile("settings.preferences_pb").also { it.delete() }
-            }
-            block(DataStoreSettingsRepository(dataStore), dataStore)
+    private fun runWithRepository(
+        defaults: AppSettings = AppSettings(),
+        block: suspend (DataStoreSettingsRepository, DataStore<Preferences>) -> Unit,
+    ) = runTest {
+        val dataStore = PreferenceDataStoreFactory.create(scope = backgroundScope) {
+            tmp.newFile("settings.preferences_pb").also { it.delete() }
         }
+        block(DataStoreSettingsRepository(dataStore, defaults), dataStore)
+    }
+
+    @Test
+    fun systemAccent_defaultsFromDesktop_untilSet() = runWithRepository(AppSettings(useSystemAccent = true)) { repo, _ ->
+        assertTrue(repo.settings.first().useSystemAccent)
+        repo.setUseSystemAccent(false)
+        assertFalse(repo.settings.first().useSystemAccent)
+    }
 
     @Test
     fun defaults_areDarkAndCloseToTray() = runWithRepository { repo, _ ->

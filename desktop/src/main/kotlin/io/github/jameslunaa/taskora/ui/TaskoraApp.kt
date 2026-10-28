@@ -77,6 +77,8 @@ fun TaskoraApp(
     /** Tasks to open from outside the window, e.g. the sticky note. */
     openTaskRequests: Flow<Long> = emptyFlow(),
     windowButton: @Composable () -> Unit = {},
+    /** The desktop reports an accent color, so settings offer to use it. */
+    systemAccentAvailable: Boolean = false,
 ) {
     var listId by remember { mutableStateOf(TaskList.INBOX_ID) }
     var taskId by remember { mutableStateOf<Long?>(null) }
@@ -207,7 +209,7 @@ fun TaskoraApp(
             onDismiss = { creatingList = false },
         )
     }
-    if (showSettings) SettingsHost(container, onDismiss = { showSettings = false })
+    if (showSettings) SettingsHost(container, systemAccentAvailable, onDismiss = { showSettings = false })
 }
 
 @Composable
@@ -240,19 +242,21 @@ private fun SearchPaneHost(
 }
 
 @Composable
-private fun SettingsHost(container: AppContainer, onDismiss: () -> Unit) {
+private fun SettingsHost(container: AppContainer, systemAccentAvailable: Boolean, onDismiss: () -> Unit) {
     val viewModel = scopedViewModel("settings") { SettingsViewModel(container.settingsRepository, container.autostart) }
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val autostartEnabled by viewModel.autostartEnabled.collectAsStateWithLifecycle()
     SettingsDialog(
         settings = settings,
         trayAvailable = SystemTray.isSupported(),
+        systemAccentAvailable = systemAccentAvailable,
         autostartAvailable = viewModel.autostartAvailable,
         autostartEnabled = autostartEnabled,
         actions = remember(viewModel) {
             SettingsActions(
                 onThemeModeChange = viewModel::setThemeMode,
                 onCloseToTrayChange = viewModel::setCloseToTray,
+                onUseSystemAccentChange = viewModel::setUseSystemAccent,
                 onAutostartChange = viewModel::setAutostart,
             )
         },

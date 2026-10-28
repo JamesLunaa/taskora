@@ -118,15 +118,21 @@ private val LightTaskoraColors = TaskoraColors(
 
 val LocalTaskoraColors = staticCompositionLocalOf { DarkTaskoraColors }
 
-/** Dark is the default look. Desktop has no wallpaper-based dynamic color. */
+/**
+ * Dark is the default look. Desktop has no wallpaper-based dynamic color, but can take the
+ * desktop's [accent] color in place of the purple (see `withAccent`).
+ */
 @Composable
 fun TaskoraTheme(
     darkTheme: Boolean = true,
+    accent: Color? = null,
     content: @Composable () -> Unit,
 ) {
-    CompositionLocalProvider(LocalTaskoraColors provides if (darkTheme) DarkTaskoraColors else LightTaskoraColors) {
+    val colors = if (darkTheme) DarkTaskoraColors else LightTaskoraColors
+    val scheme = if (darkTheme) DarkColors else LightColors
+    CompositionLocalProvider(LocalTaskoraColors provides (accent?.let(colors::withAccent) ?: colors)) {
         MaterialTheme(
-            colorScheme = if (darkTheme) DarkColors else LightColors,
+            colorScheme = accent?.let { scheme.withAccent(it, darkTheme) } ?: scheme,
             typography = taskoraTypography(),
             content = content,
         )

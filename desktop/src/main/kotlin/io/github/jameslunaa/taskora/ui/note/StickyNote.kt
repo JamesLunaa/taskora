@@ -75,6 +75,7 @@ import io.github.jameslunaa.taskora.ui.common.label
 import io.github.jameslunaa.taskora.ui.tasks.TaskListUiState
 import io.github.jameslunaa.taskora.ui.theme.TaskoraTheme
 import io.github.jameslunaa.taskora.ui.theme.listColor
+import io.github.jameslunaa.taskora.system.WindowCapabilities
 import io.github.jameslunaa.taskora.ui.window.WindowLookActions
 import io.github.jameslunaa.taskora.ui.window.WindowLookButton
 import org.jetbrains.compose.resources.stringResource
@@ -101,7 +102,7 @@ class StickyNoteActions(
 fun StickyNote(
     uiState: TaskListUiState,
     look: WindowLook,
-    hintsAvailable: Boolean,
+    capabilities: WindowCapabilities,
     actions: StickyNoteActions,
     modifier: Modifier = Modifier,
     dragArea: @Composable (@Composable () -> Unit) -> Unit = { it() },
@@ -112,7 +113,7 @@ fun StickyNote(
     ) {
         Box {
             Column(Modifier.fillMaxSize()) {
-                dragArea { NoteHeader(uiState, look, hintsAvailable, actions) }
+                dragArea { NoteHeader(uiState, look, capabilities, actions) }
                 val tasks = uiState.activeTasks
                 if (tasks.isEmpty() && !uiState.isLoading) {
                     Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -145,7 +146,7 @@ fun StickyNote(
 private fun NoteHeader(
     uiState: TaskListUiState,
     look: WindowLook,
-    hintsAvailable: Boolean,
+    capabilities: WindowCapabilities,
     actions: StickyNoteActions,
 ) {
     val colors = TaskoraTheme.colors
@@ -191,7 +192,7 @@ private fun NoteHeader(
                 onDismiss = { picking = false },
             )
         }
-        WindowLookButton(look, hintsAvailable, actions.window, tint = colors.headerBandAccent)
+        WindowLookButton(look, capabilities, actions.window, tint = colors.headerBandAccent)
         IconButton(onClick = actions.onClose) {
             Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.close), tint = colors.headerBandAccent)
         }

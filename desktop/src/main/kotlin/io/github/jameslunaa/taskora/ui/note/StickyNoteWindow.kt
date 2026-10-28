@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -51,6 +52,7 @@ fun StickyNoteWindow(
     settings: AppSettings,
     hints: WindowHints,
     darkTheme: Boolean,
+    accent: Color?,
     onOpenTask: (Long) -> Unit,
 ) {
     val note = settings.note
@@ -116,11 +118,11 @@ fun StickyNoteWindow(
                 },
             )
         }
-        TaskoraTheme(darkTheme = darkTheme) {
+        TaskoraTheme(darkTheme = darkTheme, accent = accent) {
             StickyNote(
                 uiState = uiState,
                 look = look,
-                hintsAvailable = hints.isAvailable,
+                capabilities = hints.capabilities,
                 actions = actions,
                 dragArea = { content -> WindowDraggableArea { content() } },
             )

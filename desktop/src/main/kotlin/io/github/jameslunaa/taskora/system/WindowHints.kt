@@ -17,8 +17,8 @@ import java.awt.Window
  * the rest.
  */
 interface WindowHints {
-    /** Whether [WindowLevel.BELOW] and opacity work here. */
-    val isAvailable: Boolean
+    /** Which of [WindowLevel.BELOW] and opacity work here. */
+    val capabilities: WindowCapabilities
 
     /**
      * Applies [look] (except [WindowLevel.ABOVE], which is AWT's `isAlwaysOnTop`). Returns false
@@ -28,7 +28,7 @@ interface WindowHints {
     fun apply(window: Window, look: WindowLook, skipTaskbar: Boolean = false): Boolean
 
     object None : WindowHints {
-        override val isAvailable = false
+        override val capabilities = WindowCapabilities(below = false, opacity = false)
         override fun apply(window: Window, look: WindowLook, skipTaskbar: Boolean) = true
     }
 
@@ -38,13 +38,15 @@ interface WindowHints {
     }
 }
 
+data class WindowCapabilities(val below: Boolean, val opacity: Boolean)
+
 /**
  * EWMH hints over X11: `_NET_WM_STATE_BELOW`, `_NET_WM_STATE_SKIP_TASKBAR` and
- * `_NET_WM_WINDOW_OPACITY` (KWin honors it). On a Wayland session the JVM's AWT runs under
- * XWayland, so this works there too.
+ * `_NET_WM_WINDOW_OPACITY` (KWin honors it, GNOME's mutter ignores it). On a Wayland session the
+ * JVM's AWT runs under XWayland, so this works there too.
  */
 class X11WindowHints private constructor(private val x11: X11, private val display: X11.Display) : WindowHints {
-    override val isAvailable = true
+    override val capabilities = WindowCapabilities(below = true, opacity = !Platform.isGnome)
 
     private val root = x11.XDefaultRootWindow(display)
 
@@ -53,7 +55,7 @@ class X11WindowHints private constructor(private val x11: X11, private val displ
         val client = clientWindow(window) ?: return false
         setState(client, look.level == WindowLevel.BELOW, "_NET_WM_STATE_BELOW")
         setState(client, skipTaskbar, "_NET_WM_STATE_SKIP_TASKBAR", "_NET_WM_STATE_SKIP_PAGER")
-        setOpacity(client, look.opacity)
+        if (capabilities.opacity) setOpacity(client, look.opacity)
         x11.XFlush(display)
         return true
     }

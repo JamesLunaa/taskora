@@ -148,6 +148,7 @@ class FakeSettingsRepository : SettingsRepository {
     override val settings = MutableStateFlow(AppSettings())
     override suspend fun setThemeMode(mode: ThemeMode) = settings.update { it.copy(themeMode = mode) }
     override suspend fun setCloseToTray(enabled: Boolean) = settings.update { it.copy(closeToTray = enabled) }
+    override suspend fun setUseSystemAccent(enabled: Boolean) = settings.update { it.copy(useSystemAccent = enabled) }
     override suspend fun setWindowLevel(window: AppWindow, level: WindowLevel) = updateLook(window) { it.copy(level = level) }
     override suspend fun setWindowOpacity(window: AppWindow, opacity: Float) = updateLook(window) { it.copy(opacity = opacity) }
     override suspend fun setNoteOpen(open: Boolean) = settings.update { it.copy(note = it.note.copy(isOpen = open)) }

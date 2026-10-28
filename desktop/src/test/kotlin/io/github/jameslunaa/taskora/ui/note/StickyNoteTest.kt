@@ -20,6 +20,7 @@ import io.github.jameslunaa.taskora.data.local.TaskoraDatabase
 import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.domain.model.WindowLevel
 import io.github.jameslunaa.taskora.domain.model.WindowLook
+import io.github.jameslunaa.taskora.system.WindowCapabilities
 import io.github.jameslunaa.taskora.testing.FakeAutostart
 import io.github.jameslunaa.taskora.testing.FakeNotifier
 import io.github.jameslunaa.taskora.testing.FakeSettingsRepository
@@ -46,7 +47,7 @@ class StickyNoteTest {
 
     private fun waitFor(text: String) = rule.waitUntilAtLeastOneExists(hasText(text), timeoutMillis = 5_000)
 
-    private fun setNote(hintsAvailable: Boolean = true) {
+    private fun setNote(capabilities: WindowCapabilities = WindowCapabilities(below = true, opacity = true)) {
         val viewModel = TaskListViewModel(TaskList.INBOX_ID, container.taskListRepository, container.taskRepository)
         rule.setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -54,7 +55,7 @@ class StickyNoteTest {
                 StickyNote(
                     uiState = uiState,
                     look = WindowLook(WindowLevel.ABOVE),
-                    hintsAvailable = hintsAvailable,
+                    capabilities = capabilities,
                     actions = StickyNoteActions(
                         onListChange = { events += "list $it" },
                         onAddTask = viewModel::addTask,
@@ -109,10 +110,19 @@ class StickyNoteTest {
 
     @Test
     fun withoutHints_alwaysBelowIsDisabled() {
-        setNote(hintsAvailable = false)
+        setNote(WindowCapabilities(below = false, opacity = false))
         rule.onNodeWithContentDescription("Window options").performClick()
         waitFor("Always below and opacity need an X11 or XWayland session.")
         rule.onNodeWithText("Always below").performClick()
         assertEquals(emptyList<String>(), events)
+    }
+
+    @Test
+    fun withoutOpacity_onlyThatIsExplained() {
+        setNote(WindowCapabilities(below = true, opacity = false))
+        rule.onNodeWithContentDescription("Window options").performClick()
+        waitFor("GNOME doesn’t support window opacity.")
+        rule.onNodeWithText("Always below").performClick()
+        assertEquals(listOf("level BELOW"), events)
     }
 }

@@ -4,8 +4,10 @@ enum class ThemeMode { DARK, LIGHT, SYSTEM }
 
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.DARK,
-    /** Closing the window hides it in the system tray instead of quitting (when there is a tray). */
+    /** Closing the window keeps Taskora running (in the tray, if there is one) instead of quitting. */
     val closeToTray: Boolean = true,
+    /** Use the desktop's accent color (from the XDG portal) instead of Taskora's purple. */
+    val useSystemAccent: Boolean = false,
     val mainWindow: WindowLook = WindowLook(),
     /** A sticky note is pinned on top until the user says otherwise. */
     val noteWindow: WindowLook = WindowLook(level = WindowLevel.ABOVE),

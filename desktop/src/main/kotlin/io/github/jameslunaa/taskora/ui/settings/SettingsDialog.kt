@@ -24,6 +24,8 @@ import io.github.jameslunaa.taskora.domain.model.AppSettings
 import io.github.jameslunaa.taskora.domain.model.ThemeMode
 import io.github.jameslunaa.taskora.resources.Res
 import io.github.jameslunaa.taskora.resources.close
+import io.github.jameslunaa.taskora.resources.close_to_background
+import io.github.jameslunaa.taskora.resources.close_to_background_description
 import io.github.jameslunaa.taskora.resources.close_to_tray
 import io.github.jameslunaa.taskora.resources.close_to_tray_description
 import io.github.jameslunaa.taskora.resources.font_license
@@ -40,7 +42,8 @@ import io.github.jameslunaa.taskora.resources.start_on_login_unavailable
 import io.github.jameslunaa.taskora.resources.theme_dark
 import io.github.jameslunaa.taskora.resources.theme_light
 import io.github.jameslunaa.taskora.resources.theme_system
-import io.github.jameslunaa.taskora.resources.tray_unavailable
+import io.github.jameslunaa.taskora.resources.use_system_accent
+import io.github.jameslunaa.taskora.resources.use_system_accent_description
 import io.github.jameslunaa.taskora.resources.version
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -55,6 +58,7 @@ private val ThemeMode.label: StringResource
 class SettingsActions(
     val onThemeModeChange: (ThemeMode) -> Unit,
     val onCloseToTrayChange: (Boolean) -> Unit,
+    val onUseSystemAccentChange: (Boolean) -> Unit,
     val onAutostartChange: (Boolean) -> Unit,
 )
 
@@ -62,6 +66,8 @@ class SettingsActions(
 fun SettingsDialog(
     settings: AppSettings?,
     trayAvailable: Boolean,
+    /** Whether the desktop reports an accent color, so the switch can do anything. */
+    systemAccentAvailable: Boolean,
     autostartAvailable: Boolean,
     autostartEnabled: Boolean,
     actions: SettingsActions,
@@ -84,15 +90,26 @@ fun SettingsDialog(
                             ) { Text(stringResource(mode.label)) }
                         }
                     }
+                    if (systemAccentAvailable) {
+                        SwitchRow(
+                            title = stringResource(Res.string.use_system_accent),
+                            description = stringResource(Res.string.use_system_accent_description),
+                            checked = settings.useSystemAccent,
+                            enabled = true,
+                            onCheckedChange = actions.onUseSystemAccentChange,
+                        )
+                    }
 
                     SectionHeader(Res.string.settings_window)
+                    // Without a tray, a closed window comes back when Taskora is opened again
+                    // (see SingleInstance).
                     SwitchRow(
-                        title = stringResource(Res.string.close_to_tray),
+                        title = stringResource(if (trayAvailable) Res.string.close_to_tray else Res.string.close_to_background),
                         description = stringResource(
-                            if (trayAvailable) Res.string.close_to_tray_description else Res.string.tray_unavailable,
+                            if (trayAvailable) Res.string.close_to_tray_description else Res.string.close_to_background_description,
                         ),
-                        checked = settings.closeToTray && trayAvailable,
-                        enabled = trayAvailable,
+                        checked = settings.closeToTray,
+                        enabled = true,
                         onCheckedChange = actions.onCloseToTrayChange,
                     )
                     SwitchRow(

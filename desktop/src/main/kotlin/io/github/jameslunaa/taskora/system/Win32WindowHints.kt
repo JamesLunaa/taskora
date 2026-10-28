@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
  * - no taskbar button: a tool window.
  */
 class Win32WindowHints private constructor(private val user32: User32) : WindowHints {
-    override val isAvailable = true
+    override val capabilities = WindowCapabilities(below = true, opacity = true)
 
     /** Wrapped window procedures by window handle, kept here so JNA doesn't collect the callbacks. */
     private val keepers = ConcurrentHashMap<Pointer, KeepAtBottom>()

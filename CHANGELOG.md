@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Desktop: **window pinning** from the pin button next to Settings: keep the window always on top, normal, or always below other windows, and set its **opacity**. Always below and opacity work on X11 and on KDE Wayland (through XWayland).
 - Desktop: **sticky note**, a small borderless window with one list's open tasks (or All tasks). Add and tick off tasks there; clicking one opens it in the main window. It has its own pin and opacity, starts pinned on top, and remembers where you left it. Show it from the pin menu or the tray.
 - Desktop: **Linux packages**: a PKGBUILD for Arch Linux, plus a script that builds an AppImage, .deb and .rpm. Each one bundles its own Java runtime and installs a menu entry and icons, and the taskbar shows Taskora's own icon for its windows. Start on login also works from an AppImage.
+- Desktop: **GNOME** support. Without a tray, closing the window keeps Taskora running in the background, and opening Taskora again brings it back. On GNOME the app follows the system **accent color** by default (Settings → "Use system accent color", also offered on KDE). Notifications show under Taskora's own name and icon. Opacity is turned off on GNOME, which doesn't support it.
+- Desktop: only **one copy** runs at a time; opening Taskora again shows the running window.
 - Desktop: **Windows** support with an MSI installer. Includes the tray, start on login, following the Windows light/dark setting, and always below, opacity and the sticky note. Reminders show as tray messages; clicking one opens the task.
 
 ## [1.1.0] - 2026-10-20

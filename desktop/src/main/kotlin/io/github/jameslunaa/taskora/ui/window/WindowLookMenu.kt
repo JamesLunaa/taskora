@@ -37,6 +37,8 @@ import io.github.jameslunaa.taskora.resources.window_level_above
 import io.github.jameslunaa.taskora.resources.window_level_below
 import io.github.jameslunaa.taskora.resources.window_level_normal
 import io.github.jameslunaa.taskora.resources.window_opacity
+import io.github.jameslunaa.taskora.resources.window_opacity_unavailable
+import io.github.jameslunaa.taskora.system.WindowCapabilities
 import io.github.jameslunaa.taskora.resources.window_options
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -59,13 +61,13 @@ val WindowLevel.label: StringResource
 
 /**
  * A pin button with the window's stacking level and opacity. The pin is filled while the window
- * is pinned above or below the others. [hintsAvailable] is false where "always below" and
- * opacity can't work (see `WindowHints`). [extraItems] go at the end of the menu.
+ * is pinned above or below the others. [capabilities] says whether "always below" and opacity
+ * work here (see `WindowHints`). [extraItems] go at the end of the menu.
  */
 @Composable
 fun WindowLookButton(
     look: WindowLook,
-    hintsAvailable: Boolean,
+    capabilities: WindowCapabilities,
     actions: WindowLookActions,
     tint: Color = LocalContentColor.current,
     extraItems: @Composable ColumnScope.(dismiss: () -> Unit) -> Unit = {},
@@ -87,7 +89,7 @@ fun WindowLookButton(
                         actions.onLevelChange(level)
                         expanded = false
                     },
-                    enabled = level != WindowLevel.BELOW || hintsAvailable,
+                    enabled = level != WindowLevel.BELOW || capabilities.below,
                     leadingIcon = {
                         if (level == look.level) {
                             Icon(Icons.Filled.Check, contentDescription = null)
@@ -98,10 +100,15 @@ fun WindowLookButton(
                 )
             }
             HorizontalDivider(Modifier.padding(vertical = 4.dp))
-            OpacitySlider(look.opacity, hintsAvailable, actions)
-            if (!hintsAvailable) {
+            OpacitySlider(look.opacity, capabilities.opacity, actions)
+            val unavailable = when {
+                !capabilities.below -> Res.string.window_hints_unavailable
+                !capabilities.opacity -> Res.string.window_opacity_unavailable
+                else -> null
+            }
+            if (unavailable != null) {
                 Text(
-                    stringResource(Res.string.window_hints_unavailable),
+                    stringResource(unavailable),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.width(260.dp).padding(horizontal = 16.dp, vertical = 4.dp),

@@ -37,6 +37,9 @@ import io.github.jameslunaa.taskora.resources.sticky_note
 import io.github.jameslunaa.taskora.system.WindowHints
 import io.github.jameslunaa.taskora.system.Autostart
 import io.github.jameslunaa.taskora.system.Platform
+import io.github.jameslunaa.taskora.system.SingleInstance
+import io.github.jameslunaa.taskora.domain.model.AppSettings
+import io.github.jameslunaa.taskora.ui.theme.SystemAppearance
 import io.github.jameslunaa.taskora.ui.common.scopedViewModel
 import io.github.jameslunaa.taskora.ui.note.StickyNoteWindow
 import io.github.jameslunaa.taskora.ui.window.ApplyWindowLook
@@ -63,14 +66,22 @@ import java.awt.Toolkit
 import java.io.File
 
 fun main(args: Array<String>) {
-    setWindowClass(Autostart.APP_ID)
+    val minimized = Autostart.MINIMIZED_ARG in args
     val dataDir = dataDir()
+    // Taskora already running: it shows its window (unless this is autostart) and this copy ends.
+    val instance = SingleInstance.claim(dataDir, showWindow = !minimized) ?: return
+    setWindowClass(Autostart.APP_ID)
     val database = TaskoraDatabase.create(
         file = File(dataDir, TaskoraDatabase.NAME),
         inboxName = runBlocking { getString(Res.string.inbox) },
     )
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val settingsRepository = DataStoreSettingsRepository.create(File(dataDir, "settings.preferences_pb"), appScope)
+    val settingsRepository = DataStoreSettingsRepository.create(
+        File(dataDir, "settings.preferences_pb"),
+        appScope,
+        // GNOME apps follow its accent color; elsewhere Taskora keeps its purple unless asked.
+        defaults = AppSettings(useSystemAccent = Platform.isGnome),
+    )
     val trayAvailable = SystemTray.isSupported()
     // Windows has no notify-send; its toasts come from the tray icon.
     val trayNotifier = if (Platform.isWindows) TrayNotifier(isAvailable = trayAvailable) else null
@@ -83,8 +94,9 @@ fun main(args: Array<String>) {
     // Alarms only live in memory, so every future reminder is registered again at each start.
     appScope.launch { container.taskRepository.rescheduleReminders() }
 
-    // Autostart launches with --minimized, so the app waits in the tray.
-    val startHidden = Autostart.MINIMIZED_ARG in args && trayAvailable
+    // Autostart launches with --minimized, so the app waits in the tray (or, with no tray, until
+    // Taskora is opened again).
+    val startHidden = minimized
     val hints = WindowHints.forThisDesktop()
     // Tasks clicked on the sticky note, to open in the main window.
     val noteOpenRequests = MutableSharedFlow<Long>(extraBufferCapacity = 1)
@@ -97,17 +109,21 @@ fun main(args: Array<String>) {
         val windows = scopedViewModel("windows") { WindowsViewModel(settingsRepository) }
         val settings by windows.settings.collectAsState()
         val fallbackDark = isSystemInDarkTheme()
-        val systemDark by remember { SystemTheme.observeIsDark(fallbackDark) }.collectAsState(initial = fallbackDark)
+        val appearance by remember { SystemTheme.observe() }.collectAsState(initial = SystemAppearance())
+        val systemDark = appearance.isDark ?: fallbackDark
+        val accent = appearance.accent?.takeIf { settings?.useSystemAccent == true }
         val show: () -> Unit = {
             windowVisible = true
             raiseRequests += 1
         }
         val quit = {
+            instance.close()
             database.close()
             exitApplication()
         }
 
         LaunchedEffect(Unit) { container.reminders.openRequests.collect { show() } }
+        LaunchedEffect(Unit) { instance.showRequests.collect { show() } }
 
         if (trayAvailable) {
             val trayState = rememberTrayState()
@@ -144,7 +160,8 @@ fun main(args: Array<String>) {
         Window(
             onCloseRequest = {
                 // Reminders only fire while Taskora runs, so closing hides it in the tray by default.
-                if (trayAvailable && settings?.closeToTray != false) windowVisible = false else quit()
+                // Without a tray, opening Taskora again brings the window back.
+                if (settings?.closeToTray != false) windowVisible = false else quit()
             },
             visible = windowVisible,
             state = rememberWindowState(width = 1200.dp, height = 780.dp),
@@ -184,15 +201,16 @@ fun main(args: Array<String>) {
             ApplyWindowLook(mainLook, windowVisible, hints)
             // Wait for the stored settings, so a light-theme user doesn't see a dark flash.
             val current = settings ?: return@Window
-            TaskoraTheme(darkTheme = current.isDark(systemDark)) {
+            TaskoraTheme(darkTheme = current.isDark(systemDark), accent = accent) {
                 TaskoraApp(
                     container,
                     shortcuts,
                     openTaskRequests = noteOpenRequests,
+                    systemAccentAvailable = appearance.accent != null,
                     windowButton = {
                         WindowLookButton(
                             look = current.mainWindow,
-                            hintsAvailable = hints.isAvailable,
+                            capabilities = hints.capabilities,
                             actions = remember(windows) {
                                 WindowLookActions(
                                     onLevelChange = { windows.setLevel(AppWindow.MAIN, it) },
@@ -218,6 +236,7 @@ fun main(args: Array<String>) {
                 settings = current,
                 hints = hints,
                 darkTheme = current.isDark(systemDark),
+                accent = accent,
                 onOpenTask = {
                     noteOpenRequests.tryEmit(it)
                     show()
