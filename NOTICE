@@ -23,3 +23,8 @@ The desktop app uses dbus-java (com.github.hypfvieh, https://github.com/hypfvieh
 Copyright (c) 2005-2006 Matthew Johnson and (c) 2017-2021 David M., licensed under the MIT License
 (see licenses/dbus-java-MIT.txt), and SLF4J (org.slf4j, https://www.slf4j.org),
 Copyright (c) 2004-2022 QOS.ch Sarl, licensed under the MIT License (see licenses/slf4j-MIT.txt).
+
+The desktop app uses JmDNS (org.jmdns, https://github.com/jmdns/jmdns) to find other Taskora devices on the
+local network, licensed under the Apache License, Version 2.0 (see LICENSE), and QR Code generator
+(io.nayuki:qrcodegen, https://www.nayuki.io/page/qr-code-generator-library) to show pairing codes,
+Copyright (c) Project Nayuki, licensed under the MIT License (see licenses/qrcodegen-MIT.txt).

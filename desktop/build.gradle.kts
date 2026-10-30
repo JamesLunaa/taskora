@@ -36,6 +36,10 @@ dependencies {
     // The Linux tray (StatusNotifierItem) talks D-Bus over the JDK's own Unix sockets.
     implementation(libs.dbus.java.core)
     implementation(libs.dbus.java.transport.unixsocket)
+    // LAN devices: the shared protocol (../lan, an included build), mDNS discovery, and QR codes for pairing.
+    implementation(libs.taskora.lan)
+    implementation(libs.jmdns)
+    implementation(libs.qrcodegen)
     // dbus-java logs through SLF4J, which warns at every start without a backend.
     runtimeOnly(libs.slf4j.nop)
     ksp(libs.room.compiler)

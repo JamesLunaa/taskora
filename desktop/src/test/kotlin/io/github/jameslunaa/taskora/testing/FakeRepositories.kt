@@ -60,6 +60,16 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
 
     override suspend fun getTask(id: Long): Task? = tasks.value.find { it.id == id }
 
+    override suspend fun addTaskWithSubtasks(task: Task): Long {
+        val id = addTask(task)
+        tasks.update { list ->
+            list.map { t ->
+                if (t.id != id) t else t.copy(subtasks = task.subtasks.map { it.copy(id = nextSubtaskId++, taskId = id) })
+            }
+        }
+        return id
+    }
+
     override suspend fun addTask(task: Task): Long {
         val id = nextTaskId++
         tasks.update {

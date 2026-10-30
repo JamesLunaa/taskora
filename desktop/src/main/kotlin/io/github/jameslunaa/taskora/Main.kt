@@ -61,6 +61,8 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import io.github.jameslunaa.taskora.system.tray.SniTray
+import io.github.jameslunaa.taskora.devices.Devices
+import kotlinx.coroutines.withTimeoutOrNull
 import io.github.jameslunaa.taskora.system.tray.TrayItem
 import androidx.compose.runtime.rememberUpdatedState
 import java.awt.Dimension
@@ -99,7 +101,10 @@ fun main(args: Array<String>) {
         settingsRepository,
         trayNotifier ?: NotifySendNotifier(iconPath = notificationIcon(dataDir)?.path),
         scope = appScope,
+        devicesFactory = { Devices(dataDir, it.taskListRepository, it.taskRepository, it.clock, appScope) },
     )
+    // Other Taskora devices can reach this one while it runs, in the tray included (docs/lan.md).
+    container.devices?.start()
     // Alarms only live in memory, so every future reminder is registered again at each start.
     appScope.launch { container.taskRepository.rescheduleReminders() }
 
@@ -126,6 +131,7 @@ fun main(args: Array<String>) {
             raiseRequests += 1
         }
         val quit = {
+            runBlocking { withTimeoutOrNull(2_000) { container.devices?.stop() } }
             nativeTray?.close()
             instance.close()
             database.close()

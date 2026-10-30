@@ -49,6 +49,8 @@ contents:
     dst: /usr/share/doc/taskora/dbus-java-MIT.txt
   - src: ../licenses/slf4j-MIT.txt
     dst: /usr/share/doc/taskora/slf4j-MIT.txt
+  - src: ../licenses/qrcodegen-MIT.txt
+    dst: /usr/share/doc/taskora/qrcodegen-MIT.txt
 
 # The bundled Java runtime needs X11, fonts and OpenGL from the system.
 overrides:

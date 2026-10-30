@@ -15,6 +15,8 @@ junit = "4.13.2"
 jna = "5.19.1"
 dbusJava = "5.2.2"
 slf4j = "2.0.17"
+jmdns = "3.6.4"
+qrcodegen = "1.8.0"
 
 [libraries]
 compose-material3 = { group = "org.jetbrains.compose.material3", name = "material3", version.ref = "material3" }
@@ -34,6 +36,9 @@ jna-platform = { group = "net.java.dev.jna", name = "jna-platform", version.ref 
 dbus-java-core = { group = "com.github.hypfvieh", name = "dbus-java-core", version.ref = "dbusJava" }
 dbus-java-transport-unixsocket = { group = "com.github.hypfvieh", name = "dbus-java-transport-native-unixsocket", version.ref = "dbusJava" }
 slf4j-nop = { group = "org.slf4j", name = "slf4j-nop", version.ref = "slf4j" }
+taskora-lan = { group = "io.github.jameslunaa.taskora", name = "lan" }
+jmdns = { group = "org.jmdns", name = "jmdns", version.ref = "jmdns" }
+qrcodegen = { group = "io.nayuki", name = "qrcodegen", version.ref = "qrcodegen" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]

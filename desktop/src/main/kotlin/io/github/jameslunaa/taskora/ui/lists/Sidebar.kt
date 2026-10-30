@@ -60,6 +60,8 @@ fun Sidebar(
     modifier: Modifier = Modifier,
     /** The window's pin menu, next to Settings. */
     windowButton: @Composable () -> Unit = {},
+    /** Below the lists: paired devices (see ui/devices). */
+    devicesSection: @Composable () -> Unit = {},
 ) {
     val itemColors = NavigationDrawerItemDefaults.colors(
         unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -120,6 +122,8 @@ fun Sidebar(
                 )
             }
         }
+
+        devicesSection()
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = onNewList, modifier = Modifier.weight(1f)) {

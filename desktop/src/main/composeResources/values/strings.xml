@@ -209,4 +209,42 @@
     <string name="note_empty">Nothing left to do</string>
     <string name="note_add_hint">Add a task</string>
     <string name="note_resize">Resize</string>
+
+    <!-- LAN devices -->
+    <string name="devices">Devices</string>
+    <string name="add_device">Add device</string>
+    <string name="this_computer">This computer</string>
+    <string name="device_online">Online</string>
+    <string name="device_connecting">Connecting…</string>
+    <string name="device_unavailable">Unavailable</string>
+    <string name="device_not_paired">Not paired any more</string>
+    <string name="device_unavailable_hint">%1$s can’t be reached. Taskora needs to be open on it, on the same network.</string>
+    <string name="device_not_paired_hint">%1$s no longer trusts this computer. Pair again to browse it.</string>
+    <string name="retry">Retry</string>
+    <string name="unpair">Unpair</string>
+    <string name="unpair_title">Unpair %1$s?</string>
+    <string name="unpair_body">The two devices won’t see each other’s tasks any more. Tasks already copied stay where they are.</string>
+    <string name="copy_to_this_computer">Copy to this computer</string>
+    <string name="copied_here">Copied “%1$s” to this computer’s Inbox</string>
+    <string name="device_action_failed">Couldn’t reach the device. Try again when it’s online.</string>
+    <string name="device_no_tasks">No open tasks here</string>
+    <string name="send_to_device">Send to device</string>
+    <string name="sent_to_device">Sent to %1$s</string>
+    <string name="send_may_have_failed">Couldn’t reach %1$s. The task may not have arrived.</string>
+    <string name="pair">Pair</string>
+    <string name="pair_with">Pair with %1$s?</string>
+    <string name="pair_code_hint">Check that %1$s shows the same code, then choose Pair on both devices.</string>
+    <string name="pair_qr_hint">%1$s scanned this computer’s pairing code.</string>
+    <string name="add_device_network">On this network</string>
+    <string name="add_device_qr">Phone (QR code)</string>
+    <string name="add_device_none">No other Taskora devices found yet. Taskora needs to be open on them, on the same network.</string>
+    <string name="add_device_qr_hint">On your phone, open Taskora, then Devices, Add device, Scan code.</string>
+    <string name="add_device_qr_offline">This computer isn’t connected to a network.</string>
+    <string name="add_device_this">This computer is “%1$s”</string>
+    <string name="pairing_waiting">Connecting to %1$s…</string>
+    <string name="paired_with">Paired with %1$s</string>
+    <string name="pair_declined">Pairing was cancelled</string>
+    <string name="pair_busy">%1$s can’t pair right now. Try again in a few minutes.</string>
+    <string name="pair_unavailable">Couldn’t reach %1$s</string>
+    <string name="unpaired_by">%1$s removed this computer</string>
 </resources>

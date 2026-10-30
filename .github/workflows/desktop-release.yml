@@ -31,12 +31,18 @@ jobs:
             desktop/**/*.gradle.kts
             desktop/gradle/libs.versions.toml
             desktop/gradle/wrapper/gradle-wrapper.properties
+            lan/**/*.gradle.kts
+            lan/gradle/libs.versions.toml
       - name: Check the tag matches the app version
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           version=$(sed -n 's/^version = "\(.*\)"$/\1/p' build.gradle.kts)
           [ "desktop-v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME doesn't match version $version in desktop/build.gradle.kts"; exit 1; }
       - name: Test
+        run: ./gradlew --no-daemon test
+      # The LAN protocol library both apps include (docs/lan.md).
+      - name: Test the LAN library
+        working-directory: lan
         run: ./gradlew --no-daemon test
       - name: Build AppImage, .deb and .rpm
         run: ./packaging/build-packages.sh

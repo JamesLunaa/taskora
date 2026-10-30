@@ -27,6 +27,9 @@ interface TaskRepository {
     /** Inserts [task] (its subtasks are ignored) at the end of its list. */
     suspend fun addTask(task: Task): Long
 
+    /** Adds [task] with its subtasks in one transaction, as a new task (e.g. one sent from another device). */
+    suspend fun addTaskWithSubtasks(task: Task): Long
+
     /**
      * Updates the task's own fields; subtasks are managed separately. Like [setTaskCompleted],
      * completing a recurring task here creates its next occurrence.
@@ -91,6 +94,19 @@ class OfflineTaskRepository(
                 createdAt = Instant.now(clock),
                 sortOrder = taskDao.nextSortOrder(task.listId),
             ).toEntity(),
+        )
+        syncReminder(task.copy(id = id))
+        return id
+    }
+
+    override suspend fun addTaskWithSubtasks(task: Task): Long {
+        val id = taskDao.insertNewWithSubtasks(
+            task.copy(
+                id = 0,
+                title = task.title.trim(),
+                sortOrder = taskDao.nextSortOrder(task.listId),
+            ).toEntity(),
+            task.subtasks.map { it.toEntity() },
         )
         syncReminder(task.copy(id = id))
         return id

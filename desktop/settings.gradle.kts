@@ -20,3 +20,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "taskora-desktop"
+
+// The LAN protocol library, shared with the Android app (docs/lan.md).
+includeBuild("../lan")

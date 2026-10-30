@@ -6,6 +6,7 @@ import io.github.jameslunaa.taskora.data.repository.OfflineTaskRepository
 import io.github.jameslunaa.taskora.data.repository.TaskListRepository
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
 import io.github.jameslunaa.taskora.data.settings.SettingsRepository
+import io.github.jameslunaa.taskora.devices.Devices
 import io.github.jameslunaa.taskora.reminders.DesktopReminderScheduler
 import io.github.jameslunaa.taskora.reminders.Notifier
 import io.github.jameslunaa.taskora.reminders.ReminderNotifications
@@ -26,6 +27,8 @@ class AppContainer(
     val clock: Clock = Clock.systemDefaultZone(),
     /** Lives as long as the app, for work that outlasts any one screen (reminders). */
     scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    /** LAN devices; null in tests and where networking isn't wanted. */
+    devicesFactory: ((AppContainer) -> Devices)? = null,
 ) {
     private val reminderScheduler = DesktopReminderScheduler(scope, clock)
 
@@ -41,6 +44,8 @@ class AppContainer(
     init {
         reminderScheduler.onFire = reminders::fire
     }
+
+    val devices: Devices? = devicesFactory?.invoke(this)
 }
 
 /**
