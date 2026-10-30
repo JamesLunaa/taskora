@@ -7,7 +7,7 @@ The Android app's releases are `[x.y.z]` (tag `vx.y.z`); the desktop app has its
 
 ## [Unreleased]
 
-## [Desktop 0.1.0] - 2026-10-28
+## [Desktop 0.1.0] - 2026-10-30
 
 ### Added
 
