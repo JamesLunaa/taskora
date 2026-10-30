@@ -74,6 +74,11 @@ overrides:
     recommends:
       - /usr/bin/notify-send
 
+# xz instead of the default gzip: about 12 MB smaller, and every dpkg and rpm can read it.
+deb:
+  compression: xz
+
 rpm:
   group: Applications/Productivity
   summary: Offline to-do and task lists
+  compression: xz

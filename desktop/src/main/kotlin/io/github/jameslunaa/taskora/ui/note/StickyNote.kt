@@ -20,7 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Flag
+import io.github.jameslunaa.taskora.ui.icons.filled.Flag
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu

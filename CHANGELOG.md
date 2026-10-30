@@ -7,6 +7,10 @@ The Android app's releases are `[x.y.z]` (tag `vx.y.z`); the desktop app has its
 
 ## [Unreleased]
 
+### Changed
+
+- Desktop: smaller downloads and install. The app no longer bundles the full Material icons library (only the icons it uses), and the .deb, .rpm and AppImage are packed with tighter compression.
+
 ## [Desktop 0.1.0] - 2026-10-30
 
 ### Added

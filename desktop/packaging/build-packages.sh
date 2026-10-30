@@ -82,7 +82,8 @@ build_appimage() {
     cp packaging/icons/256x256/$APP_ID.png "$appdir/$APP_ID.png"
     ln -s $APP_ID.png "$appdir/.DirIcon"
     mkdir -p "$OUT"
-    ARCH=x86_64 appimagetool --no-appstream "$appdir" "$OUT/Taskora-$VERSION-x86_64.AppImage"
+    # zstd packs tighter than the default and the AppImage runtime reads it.
+    ARCH=x86_64 appimagetool --no-appstream --comp zstd "$appdir" "$OUT/Taskora-$VERSION-x86_64.AppImage"
 }
 
 build_nfpm() { # deb | rpm

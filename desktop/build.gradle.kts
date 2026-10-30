@@ -22,7 +22,8 @@ room {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
+    // Only the core icons; the few others the app uses are copied into ui/icons.
+    implementation(libs.compose.material.icons.core)
     implementation(libs.compose.components.resources)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)

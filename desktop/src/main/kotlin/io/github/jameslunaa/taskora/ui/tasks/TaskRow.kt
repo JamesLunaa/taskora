@@ -11,11 +11,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.outlined.CheckBox
+import io.github.jameslunaa.taskora.ui.icons.filled.Flag
+import io.github.jameslunaa.taskora.ui.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.DragIndicator
-import androidx.compose.material.icons.outlined.Repeat
+import io.github.jameslunaa.taskora.ui.icons.outlined.DragIndicator
+import io.github.jameslunaa.taskora.ui.icons.outlined.Repeat
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton

@@ -13,3 +13,8 @@ Copyright 2023 Calvin Liang, licensed under the Apache License, Version 2.0 (see
 The desktop app uses JNA and JNA Platform (net.java.dev.jna, https://github.com/java-native-access/jna),
 dual-licensed under the Apache License, Version 2.0 and the LGPL 2.1; used under the Apache License,
 Version 2.0 (see LICENSE).
+
+The desktop app includes icon definitions copied from Jetpack Compose Material Icons
+(androidx.compose.material:material-icons-extended, desktop/src/main/kotlin/io/github/jameslunaa/taskora/ui/icons),
+Copyright 2025 The Android Open Source Project, licensed under the Apache License, Version 2.0 (see LICENSE).
+Only their package was changed.
