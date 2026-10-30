@@ -9,6 +9,8 @@ The Android app's releases are `[x.y.z]` (tag `vx.y.z`); the desktop app has its
 
 ### Changed
 
+- Desktop: the Linux **tray icon** is now drawn by the desktop itself (StatusNotifierItem): crisp at any scale, with a menu in your Plasma theme. It also shows on GNOME with the AppIndicator extension. Other desktops keep the previous tray.
+
 - Desktop: smaller downloads and install. The app no longer bundles the full Material icons library (only the icons it uses), and the .deb, .rpm and AppImage are packed with tighter compression.
 
 ## [Desktop 0.1.0] - 2026-10-30

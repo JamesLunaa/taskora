@@ -77,6 +77,8 @@ fun TaskoraApp(
     /** Tasks to open from outside the window, e.g. the sticky note. */
     openTaskRequests: Flow<Long> = emptyFlow(),
     windowButton: @Composable () -> Unit = {},
+    /** Whether closing can hide the window in a tray (see Main). */
+    trayAvailable: Boolean = SystemTray.isSupported(),
     /** The desktop reports an accent color, so settings offer to use it. */
     systemAccentAvailable: Boolean = false,
 ) {
@@ -209,7 +211,7 @@ fun TaskoraApp(
             onDismiss = { creatingList = false },
         )
     }
-    if (showSettings) SettingsHost(container, systemAccentAvailable, onDismiss = { showSettings = false })
+    if (showSettings) SettingsHost(container, trayAvailable, systemAccentAvailable, onDismiss = { showSettings = false })
 }
 
 @Composable
@@ -242,13 +244,18 @@ private fun SearchPaneHost(
 }
 
 @Composable
-private fun SettingsHost(container: AppContainer, systemAccentAvailable: Boolean, onDismiss: () -> Unit) {
+private fun SettingsHost(
+    container: AppContainer,
+    trayAvailable: Boolean,
+    systemAccentAvailable: Boolean,
+    onDismiss: () -> Unit,
+) {
     val viewModel = scopedViewModel("settings") { SettingsViewModel(container.settingsRepository, container.autostart) }
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val autostartEnabled by viewModel.autostartEnabled.collectAsStateWithLifecycle()
     SettingsDialog(
         settings = settings,
-        trayAvailable = SystemTray.isSupported(),
+        trayAvailable = trayAvailable,
         systemAccentAvailable = systemAccentAvailable,
         autostartAvailable = viewModel.autostartAvailable,
         autostartEnabled = autostartEnabled,

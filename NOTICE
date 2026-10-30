@@ -18,3 +18,8 @@ The desktop app includes icon definitions copied from Jetpack Compose Material I
 (androidx.compose.material:material-icons-extended, desktop/src/main/kotlin/io/github/jameslunaa/taskora/ui/icons),
 Copyright 2025 The Android Open Source Project, licensed under the Apache License, Version 2.0 (see LICENSE).
 Only their package was changed.
+
+The desktop app uses dbus-java (com.github.hypfvieh, https://github.com/hypfvieh/dbus-java) for its Linux tray icon,
+Copyright (c) 2005-2006 Matthew Johnson and (c) 2017-2021 David M., licensed under the MIT License
+(see licenses/dbus-java-MIT.txt), and SLF4J (org.slf4j, https://www.slf4j.org),
+Copyright (c) 2004-2022 QOS.ch Sarl, licensed under the MIT License (see licenses/slf4j-MIT.txt).

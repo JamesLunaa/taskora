@@ -49,5 +49,5 @@ package() {
   for dir in packaging/icons/*/; do
     install -Dm644 "$dir$id.png" -t "$pkgdir/usr/share/icons/hicolor/$(basename "$dir")/apps"
   done
-  install -Dm644 ../LICENSE ../NOTICE ../licenses/Archivo-OFL.txt -t "$pkgdir/usr/share/licenses/$pkgname"
+  install -Dm644 ../LICENSE ../NOTICE ../licenses/*.txt -t "$pkgdir/usr/share/licenses/$pkgname"
 }

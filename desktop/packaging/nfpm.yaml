@@ -45,6 +45,10 @@ contents:
     dst: /usr/share/doc/taskora/NOTICE
   - src: ../licenses/Archivo-OFL.txt
     dst: /usr/share/doc/taskora/Archivo-OFL.txt
+  - src: ../licenses/dbus-java-MIT.txt
+    dst: /usr/share/doc/taskora/dbus-java-MIT.txt
+  - src: ../licenses/slf4j-MIT.txt
+    dst: /usr/share/doc/taskora/slf4j-MIT.txt
 
 # The bundled Java runtime needs X11, fonts and OpenGL from the system.
 overrides:

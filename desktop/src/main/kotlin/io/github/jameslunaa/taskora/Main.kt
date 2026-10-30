@@ -60,7 +60,13 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import io.github.jameslunaa.taskora.system.tray.SniTray
+import io.github.jameslunaa.taskora.system.tray.TrayItem
+import androidx.compose.runtime.rememberUpdatedState
 import java.awt.Dimension
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
+import javax.imageio.ImageIO
 import java.awt.SystemTray
 import java.awt.Toolkit
 import java.io.File
@@ -82,7 +88,10 @@ fun main(args: Array<String>) {
         // GNOME apps follow its accent color; elsewhere Taskora keeps its purple unless asked.
         defaults = AppSettings(useSystemAccent = Platform.isGnome),
     )
-    val trayAvailable = SystemTray.isSupported()
+    // Linux: a StatusNotifierItem the desktop draws itself, when a tray host runs; otherwise
+    // (and on Windows) AWT's tray.
+    val nativeTray = if (Platform.isWindows) null else trayLogo()?.let { SniTray.start(runBlocking { getString(Res.string.app_name) }, it) }
+    val trayAvailable = nativeTray != null || SystemTray.isSupported()
     // Windows has no notify-send; its toasts come from the tray icon.
     val trayNotifier = if (Platform.isWindows) TrayNotifier(isAvailable = trayAvailable) else null
     val container = AppContainer(
@@ -117,6 +126,7 @@ fun main(args: Array<String>) {
             raiseRequests += 1
         }
         val quit = {
+            nativeTray?.close()
             instance.close()
             database.close()
             exitApplication()
@@ -125,7 +135,26 @@ fun main(args: Array<String>) {
         LaunchedEffect(Unit) { container.reminders.openRequests.collect { show() } }
         LaunchedEffect(Unit) { instance.showRequests.collect { show() } }
 
-        if (trayAvailable) {
+        if (nativeTray != null) {
+            val noteOpen = settings?.note?.isOpen == true
+            val currentNoteOpen by rememberUpdatedState(noteOpen)
+            val menu = listOf(
+                TrayItem.Action(TRAY_OPEN, stringResource(Res.string.open_taskora)),
+                TrayItem.Toggle(TRAY_NOTE, stringResource(Res.string.sticky_note), noteOpen),
+                TrayItem.Separator,
+                TrayItem.Action(TRAY_QUIT, stringResource(Res.string.quit)),
+            )
+            LaunchedEffect(menu) { nativeTray.setMenu(menu) }
+            LaunchedEffect(Unit) {
+                nativeTray.events.collect { key ->
+                    when (key) {
+                        SniTray.ACTIVATE, TRAY_OPEN -> show()
+                        TRAY_NOTE -> windows.setNoteOpen(!currentNoteOpen)
+                        TRAY_QUIT -> quit()
+                    }
+                }
+            }
+        } else if (trayAvailable) {
             val trayState = rememberTrayState()
             if (trayNotifier != null) {
                 LaunchedEffect(Unit) {
@@ -206,6 +235,7 @@ fun main(args: Array<String>) {
                     container,
                     shortcuts,
                     openTaskRequests = noteOpenRequests,
+                    trayAvailable = trayAvailable,
                     systemAccentAvailable = appearance.accent != null,
                     windowButton = {
                         WindowLookButton(
@@ -259,6 +289,13 @@ private fun setWindowClass(name: String) {
         toolkit.javaClass.getDeclaredField("awtAppClassName").apply { isAccessible = true }.set(null, name)
     }
 }
+
+private const val TRAY_OPEN = "open"
+private const val TRAY_NOTE = "note"
+private const val TRAY_QUIT = "quit"
+
+private fun trayLogo(): BufferedImage? =
+    runCatching { ImageIO.read(ByteArrayInputStream(runBlocking { Res.readBytes("drawable/taskora_logo.png") })) }.getOrNull()
 
 /** The logo as a file, for notify-send, which takes an icon path. */
 private fun notificationIcon(dataDir: File): File? = runCatching {
