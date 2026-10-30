@@ -3,12 +3,15 @@
 All notable changes to Taskora are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The Android app's releases are `[x.y.z]` (tag `vx.y.z`); the desktop app has its own version, released as `[Desktop x.y.z]` (tag `desktop-vx.y.z`).
 
 ## [Unreleased]
 
+## [Desktop 0.1.0] - 2026-10-30
+
 ### Added
 
-- **Desktop app for Linux (early preview)** in `desktop/`. Lists, tasks, subtasks, notes, due dates and times, and priorities, laid out as three panes (lists, tasks, task details). Hover over a task to delete it, with undo. Shortcuts: Ctrl+N goes to the new-task field, and Esc closes the details pane. It has its own data on your computer and doesn't connect to the phone yet.
+- **Desktop app for Linux and Windows (early preview)** in `desktop/`. Lists, tasks, subtasks, notes, due dates and times, and priorities, laid out as three panes (lists, tasks, task details). Hover over a task to delete it, with undo. Shortcuts: Ctrl+N goes to the new-task field, and Esc closes the details pane. It has its own data on your computer and doesn't connect to the phone yet.
 - Desktop: **search** with status, list, priority and due-date filters (Ctrl+F); **sorting** per list with direction; **drag to reorder** by the handle that appears on hover; **repeating tasks**; **reminders** as desktop notifications with Complete, Snooze and Open buttons.
 - Desktop: **right-click menu** on a task (Today, Tomorrow, pick date, priority, move, complete, delete) and **multi-select** (Ctrl+click, Shift+click for a range) with a bar for bulk changes. Esc clears the selection.
 - Desktop: **system tray** icon. Closing the window keeps Taskora running there so reminders still show; quit from the tray menu or with Ctrl+Q.
