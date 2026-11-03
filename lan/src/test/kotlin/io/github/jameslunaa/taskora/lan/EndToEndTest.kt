@@ -83,6 +83,9 @@ class EndToEndTest {
     private suspend fun pairedSession(): LanSession {
         val session = client.connect(address)
         assertTrue(session.pairByCode { true })
+        // The server stores the client a moment after the client's last step; tests that change
+        // the server's trust right after pairing would race that.
+        withTimeout(3.seconds) { serverTrust.devices.first { it.isNotEmpty() } }
         return session
     }
 
