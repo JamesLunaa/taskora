@@ -2,7 +2,7 @@
 # Builds the Taskora desktop app from the desktop-v<version> tag. The app ships the Java
 # runtime from jdk21-openjdk (made with jlink at build time), so it needs no Java installed.
 pkgname=taskora
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='Offline to-do and task lists'
 arch=('x86_64')
