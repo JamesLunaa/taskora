@@ -108,7 +108,13 @@ fun TaskoraApp(
     }
 
     val listViewModel = scopedViewModel(listId) {
-        TaskListViewModel(listId, container.taskListRepository, container.taskRepository)
+        TaskListViewModel(
+            listId,
+            container.taskListRepository,
+            container.taskRepository,
+            container.settingsRepository,
+            container.clock,
+        )
     }
     val listState by listViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -229,6 +235,7 @@ fun TaskoraApp(
                         onDeleteList = listViewModel::deleteList,
                         onClearCompleted = listViewModel::clearCompleted,
                         onSortChange = listViewModel::setSortMode,
+                        onDayFilterChange = listViewModel::setDayFilter,
                         onReorder = listViewModel::reorder,
                         bulkActions = bulkActions,
                         onToggleSelection = listViewModel::toggleSelection,
@@ -348,6 +355,7 @@ private fun DetailPane(taskId: Long, container: AppContainer, onDelete: (Task) -
             onReminderChange = viewModel::setReminder,
             onAddSubtask = viewModel::addSubtask,
             onSubtaskCompletedChange = viewModel::setSubtaskCompleted,
+            onRenameSubtask = viewModel::renameSubtask,
             onDeleteSubtask = viewModel::deleteSubtask,
             onDelete = onDelete,
             onClose = onClose,

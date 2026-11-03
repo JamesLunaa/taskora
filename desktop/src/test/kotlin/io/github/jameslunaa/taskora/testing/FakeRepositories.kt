@@ -3,6 +3,7 @@ package io.github.jameslunaa.taskora.testing
 import io.github.jameslunaa.taskora.data.repository.TaskListRepository
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
 import io.github.jameslunaa.taskora.data.settings.SettingsRepository
+import io.github.jameslunaa.taskora.domain.DayFilter
 import io.github.jameslunaa.taskora.domain.model.AppSettings
 import io.github.jameslunaa.taskora.domain.model.AppWindow
 import io.github.jameslunaa.taskora.domain.model.WindowBounds
@@ -164,6 +165,7 @@ class FakeSettingsRepository : SettingsRepository {
     override suspend fun setNoteOpen(open: Boolean) = settings.update { it.copy(note = it.note.copy(isOpen = open)) }
     override suspend fun setNoteListId(listId: Long) = settings.update { it.copy(note = it.note.copy(listId = listId)) }
     override suspend fun setNoteBounds(bounds: WindowBounds) = settings.update { it.copy(note = it.note.copy(bounds = bounds)) }
+    override suspend fun setDayFilter(filter: DayFilter) = settings.update { it.copy(dayFilter = filter) }
 
     private fun updateLook(window: AppWindow, change: (WindowLook) -> WindowLook) = settings.update {
         when (window) {

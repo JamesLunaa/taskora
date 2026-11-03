@@ -1,16 +1,22 @@
 package io.github.jameslunaa.taskora.ui
 
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.pressKey
 import io.github.jameslunaa.taskora.AppContainer
 import io.github.jameslunaa.taskora.data.local.TaskoraDatabase
 import io.github.jameslunaa.taskora.testing.FakeAutostart
@@ -36,6 +42,9 @@ class TaskoraAppTest {
 
     private fun waitFor(text: String) = rule.waitUntilAtLeastOneExists(hasText(text), timeoutMillis = 5_000)
 
+    /** Today/Tomorrow also label the day filter chips, which are selectable; this skips them. */
+    private fun notDayChip(text: String) = hasText(text) and !isSelectable()
+
     private fun waitForNo(text: String) = rule.waitUntilDoesNotExist(hasText(text), timeoutMillis = 5_000)
 
     @Test
@@ -51,7 +60,7 @@ class TaskoraAppTest {
         waitFor("Notes")
         rule.onNodeWithText("High").performClick()
         rule.onNodeWithText("High").assertIsSelected()
-        rule.onNodeWithText("Tomorrow").performClick()
+        rule.onNode(notDayChip("Tomorrow")).performClick()
         waitFor("Add time")
 
         rule.onNodeWithText("Delete task").performScrollTo().performClick()
@@ -60,6 +69,56 @@ class TaskoraAppTest {
         waitFor("Undo")
         rule.onNodeWithText("Undo").performClick()
         waitFor("Buy milk")
+    }
+
+    @Test
+    fun subtask_editInline() {
+        rule.setContent { TaskoraTheme { TaskoraApp(container(), AppShortcuts()) } }
+        addTask("Trip")
+        rule.onNodeWithText("Trip").performClick()
+        waitFor("Notes")
+
+        rule.onNodeWithText("Add a subtask").performScrollTo().performTextInput("Flights")
+        rule.onNode(hasSetTextAction() and hasText("Flights")).performKeyInput { pressKey(Key.Enter) }
+        waitFor("Flights")
+
+        // Clicking the title opens an editor; Enter saves.
+        rule.onNodeWithText("Flights").performScrollTo().performClick()
+        rule.onNode(hasSetTextAction() and hasText("Flights")).performTextReplacement("Book flights")
+        rule.onNode(hasSetTextAction() and hasText("Book flights")).performKeyInput { pressKey(Key.Enter) }
+        waitFor("Book flights")
+        rule.waitUntilDoesNotExist(hasSetTextAction() and hasText("Book flights"), timeoutMillis = 5_000)
+
+        // Escape throws the edit away.
+        rule.onNodeWithText("Book flights").performScrollTo().performClick()
+        rule.onNode(hasSetTextAction() and hasText("Book flights")).performTextReplacement("Nope")
+        rule.onNode(hasSetTextAction() and hasText("Nope")).performKeyInput { pressKey(Key.Escape) }
+        waitFor("Book flights")
+        rule.onNode(hasText("Nope")).assertDoesNotExist()
+    }
+
+    @Test
+    fun dayFilter_staysOnAcrossLists() {
+        rule.setContent { TaskoraTheme { TaskoraApp(container(), AppShortcuts()) } }
+        addTask("Someday")
+
+        rule.onNodeWithText("Today").performClick()
+        waitForNo("Someday")
+        waitFor("Nothing due today")
+
+        // Added under the filter, so it's due today and stays in view.
+        addTask("Water plants")
+
+        rule.onNodeWithText("New list").performClick()
+        rule.onNodeWithText("Name").performTextInput("Groceries")
+        rule.onNodeWithText("Create").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodes(hasText("Groceries")).fetchSemanticsNodes().size == 2 }
+        waitFor("Nothing due today")
+        rule.onNodeWithText("Today").assertIsSelected()
+
+        // Clicking the selected chip again turns the filter off.
+        rule.onNodeWithText("Today").performClick()
+        waitFor("No tasks yet")
     }
 
     @Test
@@ -88,8 +147,9 @@ class TaskoraAppTest {
 
         rule.onNodeWithText("Pay rent").performMouseInput { rightClick() }
         waitFor("Move to list…")
-        rule.onNodeWithText("Tomorrow").performClick()
-        waitFor("Tomorrow")
+        rule.onNode(notDayChip("Tomorrow")).performClick()
+        // The row's due label, next to the day filter chip.
+        rule.waitUntil(5_000) { rule.onAllNodes(hasText("Tomorrow")).fetchSemanticsNodes().size == 2 }
 
         rule.onNodeWithText("Pay rent").performMouseInput { rightClick() }
         rule.onNodeWithText("Select").performClick()

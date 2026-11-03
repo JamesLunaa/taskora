@@ -10,6 +10,8 @@ The Android app's releases are `[x.y.z]` (tag `vx.y.z`); the desktop app has its
 ### Added
 
 - Desktop: **devices on your network**. Pair Taskora on two computers, or a computer and a phone (once the phone app supports it), then browse the other device's lists and tasks live, tick tasks off there, copy them to this computer, or send tasks to it with "Send to device" in a task's right-click menu. Pairing is done once, by comparing a 6-digit code on both screens or by scanning a QR code with the phone. Everything stays on your local network and is encrypted; each device keeps its own tasks. Find it under Devices in the sidebar.
+- **Today / Tomorrow filter**: chips at the top of the task list show only tasks due today (plus overdue ones) or tomorrow. The filter stays on as you switch lists and is remembered, and tasks you add while it's on are due that day. Tap the chip again to see everything.
+- **Edit subtasks**: tap or click a subtask's title on the task's details to rename it. Done/Enter or leaving the field saves; on desktop, Esc cancels.
 
 ### Changed
 

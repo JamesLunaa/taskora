@@ -1,5 +1,7 @@
 package io.github.jameslunaa.taskora.domain.model
 
+import io.github.jameslunaa.taskora.domain.DayFilter
+
 enum class ThemeMode { DARK, LIGHT, SYSTEM }
 
 data class AppSettings(
@@ -12,6 +14,8 @@ data class AppSettings(
     /** A sticky note is pinned on top until the user says otherwise. */
     val noteWindow: WindowLook = WindowLook(level = WindowLevel.ABOVE),
     val note: NoteSettings = NoteSettings(),
+    /** Which days' tasks the main window's lists show; the same for every list. */
+    val dayFilter: DayFilter = DayFilter.ALL,
 ) {
     fun look(window: AppWindow): WindowLook = when (window) {
         AppWindow.MAIN -> mainWindow
