@@ -149,6 +149,20 @@ class TaskDetailViewModelTest {
     }
 
     @Test
+    fun renameSubtask_trimsAndIgnoresBlank() = runTest {
+        val id = repository.addTask(Task(listId = 1, title = "t"))
+        val viewModel = viewModelFor(id)
+        viewModel.addSubtask("First")
+        viewModel.setSubtaskCompleted(viewModel.uiState.value.task!!.subtasks.single(), true)
+        viewModel.renameSubtask(viewModel.uiState.value.task!!.subtasks.single(), "  Renamed ")
+        val renamed = viewModel.uiState.value.task!!.subtasks.single()
+        assertEquals("Renamed", renamed.title)
+        assertTrue(renamed.isCompleted)
+        viewModel.renameSubtask(renamed, " ")
+        assertEquals("Renamed", viewModel.uiState.value.task!!.subtasks.single().title)
+    }
+
+    @Test
     fun deleteTask_removesItAndCloses() = runTest {
         val id = repository.addTask(Task(listId = 1, title = "t"))
         val viewModel = viewModelFor(id)

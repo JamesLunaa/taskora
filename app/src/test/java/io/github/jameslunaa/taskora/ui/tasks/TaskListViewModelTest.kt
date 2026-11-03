@@ -1,10 +1,12 @@
 package io.github.jameslunaa.taskora.ui.tasks
 
 import androidx.lifecycle.SavedStateHandle
+import io.github.jameslunaa.taskora.domain.DayFilter
 import io.github.jameslunaa.taskora.domain.model.Priority
 import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.domain.model.TaskSortMode
+import io.github.jameslunaa.taskora.testing.FakeSettingsRepository
 import io.github.jameslunaa.taskora.testing.FakeTaskListRepository
 import io.github.jameslunaa.taskora.testing.FakeTaskRepository
 import io.github.jameslunaa.taskora.testing.MainDispatcherRule
@@ -30,11 +32,12 @@ class TaskListViewModelTest {
     private val clock = Clock.fixed(Instant.parse("2026-10-20T10:00:00Z"), ZoneOffset.UTC)
     private val taskRepository = FakeTaskRepository(clock)
     private val listRepository = FakeTaskListRepository()
+    private val settingsRepository = FakeSettingsRepository()
     private var listId = TaskList.INBOX_ID
 
     // Lazy so it's created after MainDispatcherRule has replaced Dispatchers.Main.
     private val viewModel by lazy {
-        TaskListViewModel(SavedStateHandle(mapOf("listId" to listId)), listRepository, taskRepository)
+        TaskListViewModel(SavedStateHandle(mapOf("listId" to listId)), listRepository, taskRepository, settingsRepository, clock)
     }
 
     private fun runWithState(block: suspend () -> Unit) = runTest {
@@ -246,5 +249,43 @@ class TaskListViewModelTest {
         val state = viewModel.uiState.value
         assertEquals(TaskSortMode.MANUAL, state.list?.sortMode)
         assertEquals(listOf(shown[1].title, shown[0].title), titles(state.activeTasks))
+    }
+
+    @Test
+    fun dayFilter_showsTodayWithOverdue_orTomorrow() = runWithState {
+        val today = LocalDate.of(2026, 10, 20)
+        taskRepository.addTask(Task(listId = 1, title = "Overdue", dueDate = today.minusDays(2)))
+        taskRepository.addTask(Task(listId = 1, title = "Today", dueDate = today))
+        taskRepository.addTask(Task(listId = 1, title = "Tomorrow", dueDate = today.plusDays(1)))
+        taskRepository.addTask(Task(listId = 1, title = "Undated"))
+        val doneEarlier = taskRepository.addTask(Task(listId = 1, title = "Done earlier", dueDate = today.minusDays(1)))
+        taskRepository.setTaskCompleted(doneEarlier, true)
+
+        viewModel.setDayFilter(DayFilter.TODAY)
+        assertEquals(setOf("Overdue", "Today"), viewModel.uiState.value.activeTasks.map { it.title }.toSet())
+        // Completed overdue tasks aren't "today" any more.
+        assertTrue(viewModel.uiState.value.completedTasks.isEmpty())
+
+        viewModel.setDayFilter(DayFilter.TOMORROW)
+        assertEquals(listOf("Tomorrow"), viewModel.uiState.value.activeTasks.map { it.title })
+
+        viewModel.setDayFilter(DayFilter.ALL)
+        assertEquals(4, viewModel.uiState.value.activeTasks.size)
+    }
+
+    @Test
+    fun dayFilter_isSharedAcrossLists() = runTest {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+        viewModel.setDayFilter(DayFilter.TOMORROW)
+        val other = TaskListViewModel(SavedStateHandle(mapOf("listId" to TaskList.ALL_TASKS_ID)), listRepository, taskRepository, settingsRepository, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { other.uiState.collect() }
+        assertEquals(DayFilter.TOMORROW, other.uiState.value.dayFilter)
+    }
+
+    @Test
+    fun dayFilter_newTasksAreDueThatDay() = runWithState {
+        viewModel.setDayFilter(DayFilter.TOMORROW)
+        viewModel.addTask("Call mom")
+        assertEquals(LocalDate.of(2026, 10, 21), viewModel.uiState.value.activeTasks.single().dueDate)
     }
 }

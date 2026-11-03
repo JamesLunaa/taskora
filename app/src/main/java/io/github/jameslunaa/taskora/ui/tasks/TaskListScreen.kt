@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,6 +32,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.jameslunaa.taskora.R
+import io.github.jameslunaa.taskora.domain.DayFilter
 import io.github.jameslunaa.taskora.domain.model.Priority
 import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
@@ -122,6 +125,7 @@ fun TaskListScreen(
             onEditList = viewModel::editList,
             onDeleteList = viewModel::deleteList,
             onSortModeChange = viewModel::setSortMode,
+            onDayFilterChange = viewModel::setDayFilter,
             onSearch = onSearch,
             onOpenSettings = onOpenSettings,
             onToggleSelection = viewModel::toggleSelection,
@@ -149,6 +153,7 @@ class TaskListActions(
     val onEditList: (String, Int) -> Unit = { _, _ -> },
     val onDeleteList: () -> Unit = {},
     val onSortModeChange: (TaskSortMode, Boolean) -> Unit = { _, _ -> },
+    val onDayFilterChange: (DayFilter) -> Unit = {},
     val onSearch: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onToggleSelection: (Long) -> Unit = {},
@@ -205,7 +210,8 @@ fun TaskListContent(
 
     // Drag order is kept locally while a drag is in progress and saved when the finger lifts.
     val lazyListState = rememberLazyListState()
-    val canDrag = !uiState.isAllTasks && !selecting && uiState.list != null
+    // A filtered list shows only some tasks, so a drag couldn't place them among the hidden ones.
+    val canDrag = !uiState.isAllTasks && !selecting && uiState.list != null && uiState.dayFilter == DayFilter.ALL
     // A long press that never moves is a plain long press, so it opens the actions sheet on release.
     var moved by remember { mutableStateOf(false) }
     // The row also sees the release that ends a long press as a tap; that tap must not open the task.
@@ -278,33 +284,36 @@ fun TaskListContent(
     ) {
         Scaffold(
             topBar = {
-                if (selecting) {
-                    SelectionTopBar(count = uiState.selectedIds.size, actions = selectionActions)
-                } else {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                if (uiState.isAllTasks) stringResource(R.string.all_tasks) else uiState.list?.name.orEmpty(),
-                            )
-                        },
-                        colors = headerBandTopAppBarColors(),
-                        navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.open_lists))
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = actions.onSearch) {
-                                Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
-                            }
-                            OverflowMenu(
-                                canEditList = uiState.list != null,
-                                canDeleteList = uiState.list?.isInbox == false,
-                                clearCompletedEnabled = uiState.completedTasks.isNotEmpty(),
-                                onSelect = { dialog = it },
-                            )
-                        },
-                    )
+                Column {
+                    if (selecting) {
+                        SelectionTopBar(count = uiState.selectedIds.size, actions = selectionActions)
+                    } else {
+                        TopAppBar(
+                            title = {
+                                Text(
+                                    if (uiState.isAllTasks) stringResource(R.string.all_tasks) else uiState.list?.name.orEmpty(),
+                                )
+                            },
+                            colors = headerBandTopAppBarColors(),
+                            navigationIcon = {
+                                IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                    Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.open_lists))
+                                }
+                            },
+                            actions = {
+                                IconButton(onClick = actions.onSearch) {
+                                    Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search))
+                                }
+                                OverflowMenu(
+                                    canEditList = uiState.list != null,
+                                    canDeleteList = uiState.list?.isInbox == false,
+                                    clearCompletedEnabled = uiState.completedTasks.isNotEmpty(),
+                                    onSelect = { dialog = it },
+                                )
+                            },
+                        )
+                    }
+                    DayFilterChips(uiState.dayFilter, actions.onDayFilterChange)
                 }
             },
             bottomBar = { if (selecting) SelectionBottomBar(selectionActions) },
@@ -324,7 +333,7 @@ fun TaskListContent(
         ) { innerPadding ->
             when {
                 uiState.isLoading -> Unit
-                uiState.isEmpty -> EmptyState(Modifier.padding(innerPadding))
+                uiState.isEmpty -> EmptyState(uiState.dayFilter, Modifier.padding(innerPadding))
                 else -> LazyColumn(
                     state = lazyListState,
                     modifier = Modifier.fillMaxSize(),
@@ -633,14 +642,40 @@ private fun CompletedHeader(count: Int, expanded: Boolean, onToggle: () -> Unit,
     )
 }
 
+/** Today/Tomorrow chips under the top bar; tapping the selected one shows everything again. */
 @Composable
-private fun EmptyState(modifier: Modifier = Modifier) {
+private fun DayFilterChips(selected: DayFilter, onSelect: (DayFilter) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            // The list scrolls under the top bar, so the row needs its own background.
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        listOf(DayFilter.TODAY to R.string.today, DayFilter.TOMORROW to R.string.tomorrow).forEach { (filter, label) ->
+            FilterChip(
+                selected = selected == filter,
+                onClick = { onSelect(if (selected == filter) DayFilter.ALL else filter) },
+                label = { Text(stringResource(label)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyState(dayFilter: DayFilter, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(stringResource(R.string.no_tasks_title), style = MaterialTheme.typography.titleMedium)
+        val title = when (dayFilter) {
+            DayFilter.ALL -> R.string.no_tasks_title
+            DayFilter.TODAY -> R.string.nothing_due_today
+            DayFilter.TOMORROW -> R.string.nothing_due_tomorrow
+        }
+        Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
         Text(
             stringResource(R.string.no_tasks_hint),
             style = MaterialTheme.typography.bodyMedium,

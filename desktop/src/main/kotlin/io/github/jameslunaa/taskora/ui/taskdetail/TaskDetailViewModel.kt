@@ -112,6 +112,13 @@ class TaskDetailViewModel(
         viewModelScope.launch { taskRepository.setSubtaskCompleted(subtask.id, completed) }
     }
 
+    /** Renames [subtask]; a blank or unchanged title is ignored. */
+    fun renameSubtask(subtask: Subtask, title: String) {
+        val trimmed = title.trim()
+        if (trimmed.isEmpty() || trimmed == subtask.title) return
+        viewModelScope.launch { taskRepository.updateSubtask(subtask.copy(title = trimmed)) }
+    }
+
     fun deleteSubtask(subtask: Subtask) {
         viewModelScope.launch { taskRepository.deleteSubtask(subtask.id) }
     }

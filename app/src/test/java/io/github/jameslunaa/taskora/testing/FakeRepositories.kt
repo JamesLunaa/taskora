@@ -2,9 +2,13 @@ package io.github.jameslunaa.taskora.testing
 
 import io.github.jameslunaa.taskora.data.repository.TaskListRepository
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
+import io.github.jameslunaa.taskora.data.settings.SettingsRepository
+import io.github.jameslunaa.taskora.domain.DayFilter
+import io.github.jameslunaa.taskora.domain.model.AppSettings
 import io.github.jameslunaa.taskora.domain.model.Subtask
 import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
+import io.github.jameslunaa.taskora.domain.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -131,4 +135,11 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
         tasks.update { all ->
             all.map { task -> task.copy(subtasks = task.subtasks.map { if (it.id == id) transform(it) else it }) }
         }
+}
+
+class FakeSettingsRepository : SettingsRepository {
+    override val settings = MutableStateFlow(AppSettings())
+    override suspend fun setThemeMode(mode: ThemeMode) = settings.update { it.copy(themeMode = mode) }
+    override suspend fun setDynamicColor(enabled: Boolean) = settings.update { it.copy(dynamicColor = enabled) }
+    override suspend fun setDayFilter(filter: DayFilter) = settings.update { it.copy(dayFilter = filter) }
 }

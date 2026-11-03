@@ -25,6 +25,8 @@
     <string name="add">Add</string>
     <string name="no_tasks_title">No tasks yet</string>
     <string name="no_tasks_hint">Tap + to add one</string>
+    <string name="nothing_due_today">Nothing due today</string>
+    <string name="nothing_due_tomorrow">Nothing due tomorrow</string>
     <string name="completed_count">Completed (%1$d)</string>
     <string name="clear_completed">Clear completed</string>
     <plurals name="clear_completed_confirm">
@@ -190,6 +192,7 @@
     <string name="clear_time">Clear time</string>
     <string name="subtasks">Subtasks</string>
     <string name="add_subtask_hint">Add subtask</string>
+    <string name="edit_subtask">Edit subtask</string>
     <string name="delete_subtask">Delete subtask</string>
     <string name="delete_task">Delete task</string>
     <string name="delete_task_confirm">Delete this task and its subtasks?</string>

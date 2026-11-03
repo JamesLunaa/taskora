@@ -47,16 +47,22 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -105,6 +111,7 @@ fun TaskDetailScreen(
             onListChange = viewModel::moveToList,
             onAddSubtask = viewModel::addSubtask,
             onSubtaskCompletedChange = viewModel::setSubtaskCompleted,
+            onRenameSubtask = viewModel::renameSubtask,
             onDeleteSubtask = viewModel::deleteSubtask,
             onDeleteTask = viewModel::deleteTask,
         ),
@@ -123,6 +130,7 @@ class TaskDetailActions(
     val onListChange: (Long) -> Unit = {},
     val onAddSubtask: (String) -> Unit = {},
     val onSubtaskCompletedChange: (Subtask, Boolean) -> Unit = { _, _ -> },
+    val onRenameSubtask: (Subtask, String) -> Unit = { _, _ -> },
     val onDeleteSubtask: (Subtask) -> Unit = {},
     val onDeleteTask: () -> Unit = {},
 )
@@ -403,26 +411,43 @@ private fun SubtaskSection(subtasks: List<Subtask>, actions: TaskDetailActions) 
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
     )
     subtasks.forEach { subtask ->
-        Row(
-            modifier = Modifier.padding(start = 4.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(
-                checked = subtask.isCompleted,
-                onCheckedChange = { actions.onSubtaskCompletedChange(subtask, it) },
-            )
-            Text(
-                subtask.title,
-                modifier = Modifier.weight(1f),
-                textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else null,
-                color = if (subtask.isCompleted) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
+        key(subtask.id) {
+            var editing by rememberSaveable { mutableStateOf(false) }
+            Row(
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = subtask.isCompleted,
+                    onCheckedChange = { actions.onSubtaskCompletedChange(subtask, it) },
+                )
+                if (editing) {
+                    SubtaskTitleField(
+                        title = subtask.title,
+                        onDone = { title ->
+                            editing = false
+                            actions.onRenameSubtask(subtask, title)
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
                 } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-            )
-            IconButton(onClick = { actions.onDeleteSubtask(subtask) }) {
-                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.delete_subtask))
+                    Text(
+                        subtask.title,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable(onClickLabel = stringResource(R.string.edit_subtask)) { editing = true }
+                            .padding(vertical = 12.dp),
+                        textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else null,
+                        color = if (subtask.isCompleted) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    )
+                }
+                IconButton(onClick = { actions.onDeleteSubtask(subtask) }) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.delete_subtask))
+                }
             }
         }
     }
@@ -444,6 +469,40 @@ private fun SubtaskSection(subtasks: List<Subtask>, actions: TaskDetailActions) 
             imeAction = ImeAction.Done,
         ),
         keyboardActions = KeyboardActions(onDone = { submit() }),
+    )
+}
+
+/** Inline editor for a subtask's title. It saves on Done or when it loses focus. */
+@Composable
+private fun SubtaskTitleField(title: String, onDone: (String) -> Unit, modifier: Modifier = Modifier) {
+    var value by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(title, TextRange(title.length)))
+    }
+    val focusRequester = remember { FocusRequester() }
+    // Focus starts out cleared, so only a loss after gaining it counts as leaving the field.
+    var hadFocus by remember { mutableStateOf(false) }
+    var finished by remember { mutableStateOf(false) }
+    val finish = {
+        if (!finished) {
+            finished = true
+            onDone(value.text)
+        }
+    }
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    OutlinedTextField(
+        value = value,
+        onValueChange = { value = it },
+        modifier = modifier
+            .focusRequester(focusRequester)
+            .onFocusChanged {
+                if (it.isFocused) hadFocus = true else if (hadFocus) finish()
+            },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences,
+            imeAction = ImeAction.Done,
+        ),
+        keyboardActions = KeyboardActions(onDone = { finish() }),
     )
 }
 

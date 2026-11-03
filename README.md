@@ -62,7 +62,7 @@ cd desktop
 ./gradlew test   # unit, database and UI tests
 ```
 
-Data is stored in `$XDG_DATA_HOME/taskora` (usually `~/.local/share/taskora`), or `%LOCALAPPDATA%\Taskora` on Windows. Reminders only fire while Taskora is running. On Linux they show as desktop notifications through `notify-send` (package `libnotify`). On Windows they show as tray messages: clicking one opens the task, and there are no Complete or Snooze buttons. Closing the window keeps Taskora running in the system tray; quit from the tray menu or with Ctrl+Q. Only one copy runs at a time, and opening Taskora again brings its window back. On GNOME, which has no tray unless you install the AppIndicator extension, that's how to reopen the window. GNOME doesn't support window opacity, so that option is off there.
+Data is stored in `$XDG_DATA_HOME/taskora` (usually `~/.local/share/taskora`), or `%LOCALAPPDATA%\Taskora` on Windows. Reminders only fire while Taskora is running. On Linux they show as desktop notifications through `notify-send` (package `libnotify`). On Windows they show as tray messages: clicking one opens the task, and there are no Complete or Snooze buttons. Closing the window keeps Taskora running in the system tray; quit from the tray menu or with Ctrl+Q. Paired devices on the same network show under Devices in the sidebar (see `docs/lan.md`). A firewall may need to allow Taskora's port, 47390/TCP, and mDNS (5353/UDP). Only one copy runs at a time, and opening Taskora again brings its window back. On GNOME, which has no tray unless you install the AppIndicator extension, that's how to reopen the window. GNOME doesn't support window opacity, so that option is off there.
 
 ### Packages
 

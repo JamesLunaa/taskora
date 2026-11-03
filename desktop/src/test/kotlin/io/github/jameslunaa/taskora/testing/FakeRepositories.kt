@@ -3,6 +3,7 @@ package io.github.jameslunaa.taskora.testing
 import io.github.jameslunaa.taskora.data.repository.TaskListRepository
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
 import io.github.jameslunaa.taskora.data.settings.SettingsRepository
+import io.github.jameslunaa.taskora.domain.DayFilter
 import io.github.jameslunaa.taskora.domain.model.AppSettings
 import io.github.jameslunaa.taskora.domain.model.AppWindow
 import io.github.jameslunaa.taskora.domain.model.WindowBounds
@@ -59,6 +60,16 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
     override fun observeTask(id: Long): Flow<Task?> = tasks.map { all -> all.find { it.id == id } }
 
     override suspend fun getTask(id: Long): Task? = tasks.value.find { it.id == id }
+
+    override suspend fun addTaskWithSubtasks(task: Task): Long {
+        val id = addTask(task)
+        tasks.update { list ->
+            list.map { t ->
+                if (t.id != id) t else t.copy(subtasks = task.subtasks.map { it.copy(id = nextSubtaskId++, taskId = id) })
+            }
+        }
+        return id
+    }
 
     override suspend fun addTask(task: Task): Long {
         val id = nextTaskId++
@@ -154,6 +165,7 @@ class FakeSettingsRepository : SettingsRepository {
     override suspend fun setNoteOpen(open: Boolean) = settings.update { it.copy(note = it.note.copy(isOpen = open)) }
     override suspend fun setNoteListId(listId: Long) = settings.update { it.copy(note = it.note.copy(listId = listId)) }
     override suspend fun setNoteBounds(bounds: WindowBounds) = settings.update { it.copy(note = it.note.copy(bounds = bounds)) }
+    override suspend fun setDayFilter(filter: DayFilter) = settings.update { it.copy(dayFilter = filter) }
 
     private fun updateLook(window: AppWindow, change: (WindowLook) -> WindowLook) = settings.update {
         when (window) {

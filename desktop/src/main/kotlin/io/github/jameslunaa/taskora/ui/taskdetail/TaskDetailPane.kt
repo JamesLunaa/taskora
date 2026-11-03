@@ -1,6 +1,7 @@
 package io.github.jameslunaa.taskora.ui.taskdetail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,17 +41,24 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import io.github.jameslunaa.taskora.domain.model.Priority
@@ -72,6 +80,7 @@ import io.github.jameslunaa.taskora.resources.repeat_never
 import io.github.jameslunaa.taskora.resources.close
 import io.github.jameslunaa.taskora.resources.created_on
 import io.github.jameslunaa.taskora.resources.delete_subtask
+import io.github.jameslunaa.taskora.resources.edit_subtask
 import io.github.jameslunaa.taskora.resources.delete_task
 import io.github.jameslunaa.taskora.resources.due_date
 import io.github.jameslunaa.taskora.resources.list
@@ -110,6 +119,7 @@ class TaskDetailActions(
     val onReminderChange: (Instant?) -> Unit,
     val onAddSubtask: (String) -> Unit,
     val onSubtaskCompletedChange: (Subtask, Boolean) -> Unit,
+    val onRenameSubtask: (Subtask, String) -> Unit,
     val onDeleteSubtask: (Subtask) -> Unit,
     val onDelete: (Task) -> Unit,
     val onClose: () -> Unit,
@@ -290,7 +300,7 @@ private fun TaskDetailContent(
         Section(stringResource(Res.string.subtasks)) {
             Column {
                 task.subtasks.forEach { subtask ->
-                    SubtaskRow(subtask, actions)
+                    key(subtask.id) { SubtaskRow(subtask, actions) }
                 }
                 AddSubtaskField(actions.onAddSubtask)
             }
@@ -416,25 +426,79 @@ private fun ColorDot(color: Int) {
 
 @Composable
 private fun SubtaskRow(subtask: Subtask, actions: TaskDetailActions) {
+    var editing by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Checkbox(
             checked = subtask.isCompleted,
             onCheckedChange = { actions.onSubtaskCompletedChange(subtask, it) },
         )
-        Text(
-            subtask.title,
-            modifier = Modifier.weight(1f),
-            textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else null,
-            color = if (subtask.isCompleted) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-        )
+        if (editing) {
+            SubtaskTitleField(
+                title = subtask.title,
+                onDone = { title ->
+                    editing = false
+                    if (title != null) actions.onRenameSubtask(subtask, title)
+                },
+                modifier = Modifier.weight(1f),
+            )
+        } else {
+            Text(
+                subtask.title,
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClickLabel = stringResource(Res.string.edit_subtask)) { editing = true }
+                    .padding(vertical = 12.dp),
+                textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else null,
+                color = if (subtask.isCompleted) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+            )
+        }
         IconButton(onClick = { actions.onDeleteSubtask(subtask) }) {
             Icon(Icons.Outlined.Close, contentDescription = stringResource(Res.string.delete_subtask))
         }
     }
+}
+
+/**
+ * Inline editor for a subtask's title. Enter or leaving the field saves; Escape cancels,
+ * which [onDone] gets as null.
+ */
+@Composable
+private fun SubtaskTitleField(title: String, onDone: (String?) -> Unit, modifier: Modifier = Modifier) {
+    var value by remember { mutableStateOf(TextFieldValue(title, TextRange(title.length))) }
+    val focusRequester = remember { FocusRequester() }
+    // Focus starts out cleared, so only a loss after gaining it counts as leaving the field.
+    var hadFocus by remember { mutableStateOf(false) }
+    var finished by remember { mutableStateOf(false) }
+    val finish = { result: String? ->
+        if (!finished) {
+            finished = true
+            onDone(result)
+        }
+    }
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    OutlinedTextField(
+        value = value,
+        onValueChange = { value = it },
+        singleLine = true,
+        modifier = modifier
+            .focusRequester(focusRequester)
+            .onFocusChanged {
+                if (it.isFocused) hadFocus = true else if (hadFocus) finish(value.text)
+            }
+            .onPreviewKeyEvent {
+                if (it.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (it.key) {
+                    Key.Enter -> finish(value.text)
+                    Key.Escape -> finish(null)
+                    else -> return@onPreviewKeyEvent false
+                }
+                true
+            },
+    )
 }
 
 @Composable

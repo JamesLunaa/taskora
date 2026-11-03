@@ -50,7 +50,14 @@ import io.github.jameslunaa.taskora.ui.settings.SettingsDialog
 import io.github.jameslunaa.taskora.ui.settings.SettingsViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.merge
+import androidx.compose.runtime.collectAsState
+import io.github.jameslunaa.taskora.ui.devices.DeviceBrowserHost
+import io.github.jameslunaa.taskora.ui.devices.DevicesOverlay
+import io.github.jameslunaa.taskora.ui.devices.DevicesSection
+import io.github.jameslunaa.taskora.ui.devices.sendTasks
+import io.github.jameslunaa.taskora.ui.tasks.SendTarget
 import kotlinx.coroutines.launch
 import java.awt.SystemTray
 import org.jetbrains.compose.resources.getPluralString
@@ -77,6 +84,8 @@ fun TaskoraApp(
     /** Tasks to open from outside the window, e.g. the sticky note. */
     openTaskRequests: Flow<Long> = emptyFlow(),
     windowButton: @Composable () -> Unit = {},
+    /** Whether closing can hide the window in a tray (see Main). */
+    trayAvailable: Boolean = SystemTray.isSupported(),
     /** The desktop reports an accent color, so settings offer to use it. */
     systemAccentAvailable: Boolean = false,
 ) {
@@ -85,6 +94,13 @@ fun TaskoraApp(
     var searching by remember { mutableStateOf(false) }
     var creatingList by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    val devices = container.devices
+    // The paired device being browsed, by fingerprint; null shows this computer's lists.
+    var deviceFingerprint by remember { mutableStateOf<String?>(null) }
+    var addingDevice by remember { mutableStateOf(false) }
+    val paired by remember(devices) { devices?.paired ?: MutableStateFlow(emptyList()) }.collectAsState()
+    val discovered by remember(devices) { devices?.discovered ?: MutableStateFlow(emptyMap()) }.collectAsState()
+    val browsedDevice = paired.firstOrNull { it.fingerprint == deviceFingerprint }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     shortcuts.openSearch = {
@@ -92,7 +108,13 @@ fun TaskoraApp(
     }
 
     val listViewModel = scopedViewModel(listId) {
-        TaskListViewModel(listId, container.taskListRepository, container.taskRepository)
+        TaskListViewModel(
+            listId,
+            container.taskListRepository,
+            container.taskRepository,
+            container.settingsRepository,
+            container.clock,
+        )
     }
     val listState by listViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -133,6 +155,10 @@ fun TaskoraApp(
         }
     }
     val deleteTask: (Task) -> Unit = { deleteTasks(listOf(it)) }
+    val showMessage: suspend (String) -> Unit = { message ->
+        snackbarHostState.currentSnackbarData?.dismiss()
+        snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+    }
     val bulkActions = TaskBulkActions(
         onOpen = { taskId = it.id },
         onSelect = { listViewModel.toggleSelection(it.id) },
@@ -141,6 +167,8 @@ fun TaskoraApp(
         onMove = listViewModel::moveTasks,
         onSetCompleted = listViewModel::setTasksCompleted,
         onDelete = deleteTasks,
+        sendTargets = paired.map { SendTarget(it, online = it.deviceId in discovered) },
+        onSend = { tasks, device -> devices?.let { sendTasks(scope, it, tasks, device, showMessage) } },
     )
     // Esc clears the selection first, then closes the task pane.
     shortcuts.escape = {
@@ -151,21 +179,48 @@ fun TaskoraApp(
         Row(Modifier.fillMaxSize()) {
             Sidebar(
                 lists = listState.lists,
-                selectedListId = listId.takeUnless { searching },
-                searching = searching,
+                selectedListId = listId.takeUnless { searching || browsedDevice != null },
+                searching = searching && browsedDevice == null,
                 onSelect = {
                     if (it != listId || searching) taskId = null
                     listId = it
                     searching = false
+                    deviceFingerprint = null
                 },
-                onSearch = shortcuts.openSearch,
+                onSearch = {
+                    deviceFingerprint = null
+                    shortcuts.openSearch()
+                },
                 onNewList = { creatingList = true },
                 onSettings = { showSettings = true },
                 modifier = Modifier.width(260.dp),
                 windowButton = windowButton,
+                devicesSection = {
+                    if (devices != null) {
+                        DevicesSection(
+                            paired = paired,
+                            onlineIds = discovered.keys,
+                            selectedFingerprint = browsedDevice?.fingerprint,
+                            onSelect = { device ->
+                                deviceFingerprint = device.fingerprint
+                                searching = false
+                                taskId = null
+                            },
+                            onAdd = { addingDevice = true },
+                        )
+                    }
+                },
             )
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                if (searching) {
+                if (devices != null && browsedDevice != null) {
+                    DeviceBrowserHost(
+                        devices,
+                        browsedDevice,
+                        container,
+                        onMessage = showMessage,
+                        onUnpaired = { deviceFingerprint = null },
+                    )
+                } else if (searching) {
                     SearchPaneHost(container, taskId, shortcuts, onOpenTask = { taskId = it }, onDelete = deleteTask)
                 } else {
                     TaskListPane(
@@ -180,6 +235,7 @@ fun TaskoraApp(
                         onDeleteList = listViewModel::deleteList,
                         onClearCompleted = listViewModel::clearCompleted,
                         onSortChange = listViewModel::setSortMode,
+                        onDayFilterChange = listViewModel::setDayFilter,
                         onReorder = listViewModel::reorder,
                         bulkActions = bulkActions,
                         onToggleSelection = listViewModel::toggleSelection,
@@ -193,11 +249,21 @@ fun TaskoraApp(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
                 )
             }
-            taskId?.let { id ->
+            taskId?.takeIf { browsedDevice == null }?.let { id ->
                 VerticalDivider()
                 DetailPane(id, container, onDelete = deleteTask, onClose = { taskId = null })
             }
         }
+    }
+
+    if (devices != null) {
+        DevicesOverlay(
+            devices,
+            addingDevice = addingDevice,
+            onCloseAddDevice = { addingDevice = false },
+            onPaired = { deviceFingerprint = it.fingerprint },
+            onMessage = { scope.launch { showMessage(it) } },
+        )
     }
 
     if (creatingList) {
@@ -209,7 +275,7 @@ fun TaskoraApp(
             onDismiss = { creatingList = false },
         )
     }
-    if (showSettings) SettingsHost(container, systemAccentAvailable, onDismiss = { showSettings = false })
+    if (showSettings) SettingsHost(container, trayAvailable, systemAccentAvailable, onDismiss = { showSettings = false })
 }
 
 @Composable
@@ -242,13 +308,18 @@ private fun SearchPaneHost(
 }
 
 @Composable
-private fun SettingsHost(container: AppContainer, systemAccentAvailable: Boolean, onDismiss: () -> Unit) {
+private fun SettingsHost(
+    container: AppContainer,
+    trayAvailable: Boolean,
+    systemAccentAvailable: Boolean,
+    onDismiss: () -> Unit,
+) {
     val viewModel = scopedViewModel("settings") { SettingsViewModel(container.settingsRepository, container.autostart) }
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val autostartEnabled by viewModel.autostartEnabled.collectAsStateWithLifecycle()
     SettingsDialog(
         settings = settings,
-        trayAvailable = SystemTray.isSupported(),
+        trayAvailable = trayAvailable,
         systemAccentAvailable = systemAccentAvailable,
         autostartAvailable = viewModel.autostartAvailable,
         autostartEnabled = autostartEnabled,
@@ -284,6 +355,7 @@ private fun DetailPane(taskId: Long, container: AppContainer, onDelete: (Task) -
             onReminderChange = viewModel::setReminder,
             onAddSubtask = viewModel::addSubtask,
             onSubtaskCompletedChange = viewModel::setSubtaskCompleted,
+            onRenameSubtask = viewModel::renameSubtask,
             onDeleteSubtask = viewModel::deleteSubtask,
             onDelete = onDelete,
             onClose = onClose,

@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +54,7 @@ import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.jameslunaa.taskora.domain.DayFilter
 import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.domain.model.TaskSortMode
@@ -71,6 +73,10 @@ import io.github.jameslunaa.taskora.resources.more_options
 import io.github.jameslunaa.taskora.resources.new_task_hint
 import io.github.jameslunaa.taskora.resources.no_tasks_hint
 import io.github.jameslunaa.taskora.resources.no_tasks_title
+import io.github.jameslunaa.taskora.resources.nothing_due_today
+import io.github.jameslunaa.taskora.resources.nothing_due_tomorrow
+import io.github.jameslunaa.taskora.resources.today
+import io.github.jameslunaa.taskora.resources.tomorrow
 import io.github.jameslunaa.taskora.ui.common.headerBandTopAppBarColors
 import io.github.jameslunaa.taskora.ui.lists.ListEditorDialog
 import io.github.jameslunaa.taskora.ui.lists.SortMenu
@@ -98,6 +104,7 @@ fun TaskListPane(
     onDeleteList: () -> Unit,
     onClearCompleted: () -> Unit,
     onSortChange: (TaskSortMode, Boolean) -> Unit,
+    onDayFilterChange: (DayFilter) -> Unit,
     /** Saves a drag: the list's active task ids in their new order. */
     onReorder: (List<Long>) -> Unit,
     bulkActions: TaskBulkActions,
@@ -114,7 +121,8 @@ fun TaskListPane(
 
     // While dragging, the order lives here; it's saved when the drag ends.
     val lazyListState = rememberLazyListState()
-    val canDrag = list != null && !uiState.isAllTasks && !uiState.isSelecting
+    // A filtered list shows only some tasks, so a drag couldn't place them among the hidden ones.
+    val canDrag = list != null && !uiState.isAllTasks && !uiState.isSelecting && uiState.dayFilter == DayFilter.ALL
     var moved by remember { mutableStateOf(false) }
     var dragTasks by remember(uiState.activeTasks) { mutableStateOf(uiState.activeTasks) }
     val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
@@ -194,9 +202,10 @@ fun TaskListPane(
         }
 
         AddTaskField(onAdd = onAddTask, focusRequester = addFieldFocus)
+        DayFilterChips(uiState.dayFilter, onDayFilterChange)
 
         if (!uiState.isLoading && uiState.isEmpty) {
-            EmptyState(Modifier.weight(1f))
+            EmptyState(uiState.dayFilter, Modifier.weight(1f))
         } else {
             LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = lazyListState) {
                 uiState.sections.forEach { section ->
@@ -397,14 +406,36 @@ private fun CompletedHeader(count: Int, expanded: Boolean, onToggle: () -> Unit)
     }
 }
 
+/** Today/Tomorrow chips under the add field; clicking the selected one shows everything again. */
 @Composable
-private fun EmptyState(modifier: Modifier = Modifier) {
+private fun DayFilterChips(selected: DayFilter, onSelect: (DayFilter) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        listOf(DayFilter.TODAY to Res.string.today, DayFilter.TOMORROW to Res.string.tomorrow).forEach { (filter, label) ->
+            FilterChip(
+                selected = selected == filter,
+                onClick = { onSelect(if (selected == filter) DayFilter.ALL else filter) },
+                label = { Text(stringResource(label)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyState(dayFilter: DayFilter, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(stringResource(Res.string.no_tasks_title), style = MaterialTheme.typography.titleMedium)
+        val title = when (dayFilter) {
+            DayFilter.ALL -> Res.string.no_tasks_title
+            DayFilter.TODAY -> Res.string.nothing_due_today
+            DayFilter.TOMORROW -> Res.string.nothing_due_tomorrow
+        }
+        Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
         Text(
             stringResource(Res.string.no_tasks_hint),
             style = MaterialTheme.typography.bodyMedium,

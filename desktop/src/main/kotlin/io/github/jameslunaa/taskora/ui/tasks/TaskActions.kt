@@ -23,6 +23,10 @@ import io.github.jameslunaa.taskora.ui.icons.outlined.SelectAll
 import io.github.jameslunaa.taskora.ui.icons.outlined.Today
 import io.github.jameslunaa.taskora.ui.icons.outlined.OutlinedFlag
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.automirrored.outlined.Send
+import io.github.jameslunaa.taskora.lan.PairedDevice
+import io.github.jameslunaa.taskora.resources.send_to_device
+import io.github.jameslunaa.taskora.ui.devices.deviceIcon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -70,9 +74,15 @@ class TaskBulkActions(
     val onMove: (Collection<Long>, Long) -> Unit,
     val onSetCompleted: (Collection<Long>, Boolean) -> Unit,
     val onDelete: (List<Task>) -> Unit,
+    /** Paired devices to send copies to (docs/lan.md); none hides "Send to device". */
+    val sendTargets: List<SendTarget> = emptyList(),
+    val onSend: (List<Task>, PairedDevice) -> Unit = { _, _ -> },
 )
 
-private enum class MenuPage { MAIN, PRIORITY, MOVE }
+/** A paired device in "Send to device"; [online] while it's announced on the network. */
+data class SendTarget(val device: PairedDevice, val online: Boolean)
+
+private enum class MenuPage { MAIN, PRIORITY, MOVE, SEND }
 
 /**
  * The desktop's version of the phone's long-press sheet, at the pointer. [tasks] is the clicked
@@ -124,6 +134,9 @@ fun TaskContextMenu(
                         HorizontalDivider()
                         Item(Icons.Outlined.OutlinedFlag, Res.string.set_priority) { page = MenuPage.PRIORITY }
                         Item(Icons.AutoMirrored.Outlined.DriveFileMove, Res.string.move_to_list) { page = MenuPage.MOVE }
+                        if (actions.sendTargets.isNotEmpty()) {
+                            Item(Icons.AutoMirrored.Outlined.Send, Res.string.send_to_device) { page = MenuPage.SEND }
+                        }
                         val allCompleted = tasks.all { it.isCompleted }
                         Item(
                             if (allCompleted) Icons.Outlined.RadioButtonUnchecked else Icons.Outlined.CheckCircle,
@@ -149,6 +162,14 @@ fun TaskContextMenu(
                             },
                             enabled = tasks.any { it.listId != list.id },
                             onClick = { act { actions.onMove(ids, list.id) } },
+                        )
+                    }
+                    MenuPage.SEND -> actions.sendTargets.forEach { target ->
+                        DropdownMenuItem(
+                            text = { Text(target.device.name) },
+                            leadingIcon = { Icon(deviceIcon(target.device.os), contentDescription = null) },
+                            enabled = target.online,
+                            onClick = { act { actions.onSend(tasks, target.device) } },
                         )
                     }
                 }

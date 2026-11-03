@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import io.github.jameslunaa.taskora.domain.DayFilter
 import io.github.jameslunaa.taskora.domain.model.AppSettings
 import io.github.jameslunaa.taskora.domain.model.AppWindow
 import io.github.jameslunaa.taskora.domain.model.NoteSettings
@@ -31,6 +32,7 @@ interface SettingsRepository {
     suspend fun setNoteOpen(open: Boolean)
     suspend fun setNoteListId(listId: Long)
     suspend fun setNoteBounds(bounds: WindowBounds)
+    suspend fun setDayFilter(filter: DayFilter)
 }
 
 class DataStoreSettingsRepository(
@@ -53,6 +55,8 @@ class DataStoreSettingsRepository(
                     listId = prefs[NOTE_LIST_ID] ?: defaults.note.listId,
                     bounds = prefs[NOTE_BOUNDS]?.let(::parseBounds),
                 ),
+                dayFilter = prefs[DAY_FILTER]?.let { name -> DayFilter.entries.find { it.name == name } }
+                    ?: defaults.dayFilter,
             )
         }
         .distinctUntilChanged()
@@ -89,6 +93,10 @@ class DataStoreSettingsRepository(
         dataStore.edit { it[NOTE_BOUNDS] = with(bounds) { "$x,$y,$width,$height" } }
     }
 
+    override suspend fun setDayFilter(filter: DayFilter) {
+        dataStore.edit { it[DAY_FILTER] = filter.name }
+    }
+
     private fun Preferences.look(window: AppWindow, default: WindowLook) = WindowLook(
         level = this[levelKey(window)]?.let { name -> WindowLevel.entries.find { it.name == name } }
             ?: default.level,
@@ -102,6 +110,7 @@ class DataStoreSettingsRepository(
         private val NOTE_OPEN = booleanPreferencesKey("note_open")
         private val NOTE_LIST_ID = longPreferencesKey("note_list_id")
         private val NOTE_BOUNDS = stringPreferencesKey("note_bounds")
+        private val DAY_FILTER = stringPreferencesKey("day_filter")
 
         private fun levelKey(window: AppWindow) = stringPreferencesKey("${window.name.lowercase()}_window_level")
         private fun opacityKey(window: AppWindow) = floatPreferencesKey("${window.name.lowercase()}_window_opacity")

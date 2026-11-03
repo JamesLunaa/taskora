@@ -7,9 +7,25 @@ The Android app's releases are `[x.y.z]` (tag `vx.y.z`); the desktop app has its
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-03
+
+### Added
+
+- **Today / Tomorrow filter**: chips at the top of the task list show only tasks due today (plus overdue ones) or tomorrow. The filter stays on as you switch lists and is remembered, and tasks you add while it's on are due that day. Tap the chip again to see everything.
+- **Edit subtasks**: tap a subtask's title on the task's details to rename it. Done or tapping away saves.
+
+## [Desktop 0.2.0] - 2026-11-03
+
+### Added
+
+- **Devices on your network**. Pair Taskora on two computers, or a computer and a phone (once the phone app supports it), then browse the other device's lists and tasks live, tick tasks off there, copy them to this computer, or send tasks to it with "Send to device" in a task's right-click menu. Pairing is done once, by comparing a 6-digit code on both screens or by scanning a QR code with the phone. Everything stays on your local network and is encrypted; each device keeps its own tasks. Find it under Devices in the sidebar.
+- **Today / Tomorrow filter**: chips under the new-task field show only tasks due today (plus overdue ones) or tomorrow. The filter stays on as you switch lists and is remembered, and tasks you add while it's on are due that day. Click the chip again to see everything. The sticky note always shows its whole list.
+- **Edit subtasks**: click a subtask's title on the task's details to rename it. Enter or clicking away saves; Esc cancels.
+
 ### Changed
 
-- Desktop: smaller downloads and install. The app no longer bundles the full Material icons library (only the icons it uses), and the .deb, .rpm and AppImage are packed with tighter compression.
+- The Linux **tray icon** is now drawn by the desktop itself (StatusNotifierItem): crisp at any scale, with a menu in your Plasma theme. It also shows on GNOME with the AppIndicator extension. Other desktops keep the previous tray.
+- Smaller downloads and install. The app no longer bundles the full Material icons library (only the icons it uses), and the .deb, .rpm and AppImage are packed with tighter compression.
 
 ## [Desktop 0.1.0] - 2026-10-30
 

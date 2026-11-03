@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import io.github.jameslunaa.taskora.domain.DayFilter
 import io.github.jameslunaa.taskora.domain.model.AppSettings
 import io.github.jameslunaa.taskora.domain.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,7 @@ interface SettingsRepository {
     val settings: Flow<AppSettings>
     suspend fun setThemeMode(mode: ThemeMode)
     suspend fun setDynamicColor(enabled: Boolean)
+    suspend fun setDayFilter(filter: DayFilter)
 }
 
 @Singleton
@@ -30,6 +32,8 @@ class DataStoreSettingsRepository @Inject constructor(
                 themeMode = prefs[THEME_MODE]?.let { name -> ThemeMode.entries.find { it.name == name } }
                     ?: AppSettings().themeMode,
                 dynamicColor = prefs[DYNAMIC_COLOR] ?: AppSettings().dynamicColor,
+                dayFilter = prefs[DAY_FILTER]?.let { name -> DayFilter.entries.find { it.name == name } }
+                    ?: AppSettings().dayFilter,
             )
         }
         .distinctUntilChanged()
@@ -42,8 +46,13 @@ class DataStoreSettingsRepository @Inject constructor(
         dataStore.edit { it[DYNAMIC_COLOR] = enabled }
     }
 
+    override suspend fun setDayFilter(filter: DayFilter) {
+        dataStore.edit { it[DAY_FILTER] = filter.name }
+    }
+
     private companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        val DAY_FILTER = stringPreferencesKey("day_filter")
     }
 }

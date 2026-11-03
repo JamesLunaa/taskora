@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.jameslunaa.taskora.data.repository.TaskListRepository
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
+import io.github.jameslunaa.taskora.data.settings.SettingsRepository
+import io.github.jameslunaa.taskora.domain.DayFilter
+import io.github.jameslunaa.taskora.domain.matchesDay
 import io.github.jameslunaa.taskora.domain.model.Priority
 import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
@@ -16,11 +19,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Clock
 import java.time.LocalDate
 
 /** A run of active tasks. [list] is the header to show above them; null for a single plain list. */
@@ -42,6 +48,8 @@ data class TaskListUiState(
     val isAllTasks: Boolean = false,
     /** Tasks picked in selection mode; selection mode is on while this isn't empty. */
     val selectedIds: Set<Long> = emptySet(),
+    /** Applied to both active and completed tasks; it carries over to other lists. */
+    val dayFilter: DayFilter = DayFilter.ALL,
 ) {
     val activeTasks: List<Task> get() = sections.flatMap { it.tasks }
     val isEmpty: Boolean get() = activeTasks.isEmpty() && completedTasks.isEmpty()
@@ -52,11 +60,16 @@ sealed interface TaskListEvent {
     data class OpenList(val listId: Long) : TaskListEvent
 }
 
-/** [listId] is a list id or [TaskList.ALL_TASKS_ID]. */
+/**
+ * [listId] is a list id or [TaskList.ALL_TASKS_ID]. Without a [settingsRepository] (the sticky
+ * note) the day filter stays off.
+ */
 class TaskListViewModel(
     private val listId: Long,
     private val taskListRepository: TaskListRepository,
     private val taskRepository: TaskRepository,
+    private val settingsRepository: SettingsRepository? = null,
+    private val clock: Clock = Clock.systemDefaultZone(),
 ) : ViewModel() {
     private val isAllTasks = listId == TaskList.ALL_TASKS_ID
 
@@ -70,7 +83,10 @@ class TaskListViewModel(
         taskListRepository.observeLists(),
         if (isAllTasks) taskRepository.observeAllTasks() else taskRepository.observeTasks(listId),
         selection,
-    ) { list, lists, tasks, selected ->
+        settingsRepository?.settings?.map { it.dayFilter }?.distinctUntilChanged() ?: flowOf(DayFilter.ALL),
+    ) { list, lists, allTasks, selected, dayFilter ->
+        val today = LocalDate.now(clock)
+        val tasks = if (dayFilter == DayFilter.ALL) allTasks else allTasks.filter { it.matchesDay(dayFilter, today) }
         val (completed, active) = tasks.partition { it.isCompleted }
         val sections = if (isAllTasks) {
             lists.mapNotNull { l ->
@@ -90,16 +106,29 @@ class TaskListViewModel(
             completedTasks = completed.sortedByDescending { it.completedAt },
             isListMissing = !isAllTasks && list == null,
             isAllTasks = isAllTasks,
-            // Deleted or moved-away tasks drop out of the selection.
+            // Deleted, moved-away or filtered-out tasks drop out of the selection.
             selectedIds = selected.intersect(tasks.mapTo(HashSet()) { it.id }),
+            dayFilter = dayFilter,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskListUiState())
+
+    fun setDayFilter(filter: DayFilter) {
+        val settings = settingsRepository ?: return
+        viewModelScope.launch { settings.setDayFilter(filter) }
+    }
 
     fun addTask(title: String) {
         if (title.isBlank()) return
         // All tasks has no list of its own, so new tasks go to the Inbox.
         val target = if (isAllTasks) TaskList.INBOX_ID else listId
-        viewModelScope.launch { taskRepository.addTask(Task(listId = target, title = title)) }
+        // Under a day filter the new task is due that day, so it doesn't vanish once added.
+        val today = LocalDate.now(clock)
+        val dueDate = when (uiState.value.dayFilter) {
+            DayFilter.ALL -> null
+            DayFilter.TODAY -> today
+            DayFilter.TOMORROW -> today.plusDays(1)
+        }
+        viewModelScope.launch { taskRepository.addTask(Task(listId = target, title = title, dueDate = dueDate)) }
     }
 
     fun setCompleted(task: Task, completed: Boolean) {

@@ -2,7 +2,7 @@
 # Builds the Taskora desktop app from the desktop-v<version> tag. The app ships the Java
 # runtime from jdk21-openjdk (made with jlink at build time), so it needs no Java installed.
 pkgname=taskora
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='Offline to-do and task lists'
 arch=('x86_64')
@@ -49,5 +49,5 @@ package() {
   for dir in packaging/icons/*/; do
     install -Dm644 "$dir$id.png" -t "$pkgdir/usr/share/icons/hicolor/$(basename "$dir")/apps"
   done
-  install -Dm644 ../LICENSE ../NOTICE ../licenses/Archivo-OFL.txt -t "$pkgdir/usr/share/licenses/$pkgname"
+  install -Dm644 ../LICENSE ../NOTICE ../licenses/*.txt -t "$pkgdir/usr/share/licenses/$pkgname"
 }

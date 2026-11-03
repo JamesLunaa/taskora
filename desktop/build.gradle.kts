@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "io.github.jameslunaa.taskora"
-version = "0.1.0"
+version = "0.2.0"
 
 kotlin {
     jvmToolchain(21)
@@ -33,6 +33,15 @@ dependencies {
     implementation(libs.datastore.preferences.core)
     implementation(libs.reorderable)
     implementation(libs.jna.platform)
+    // The Linux tray (StatusNotifierItem) talks D-Bus over the JDK's own Unix sockets.
+    implementation(libs.dbus.java.core)
+    implementation(libs.dbus.java.transport.unixsocket)
+    // LAN devices: the shared protocol (../lan, an included build), mDNS discovery, and QR codes for pairing.
+    implementation(libs.taskora.lan)
+    implementation(libs.jmdns)
+    implementation(libs.qrcodegen)
+    // dbus-java logs through SLF4J, which warns at every start without a backend.
+    runtimeOnly(libs.slf4j.nop)
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)
@@ -70,7 +79,8 @@ compose.desktop {
             vendor = "Jose Cynon Luna"
             copyright = "Copyright 2026 Jose Cynon Luna. Licensed under the Apache License, Version 2.0."
             licenseFile.set(rootProject.file("../LICENSE"))
-            modules("java.instrument", "jdk.unsupported")
+            // jdk.security.auth and jdk.net: dbus-java (the Linux tray) authenticates with the user id and uses Unix socket options.
+            modules("java.instrument", "jdk.unsupported", "jdk.security.auth", "jdk.net")
             linux {
                 iconFile.set(project.file("packaging/icons/256x256/io.github.jameslunaa.taskora.png"))
             }
