@@ -52,6 +52,28 @@ cd taskora
 ./gradlew lint
 ```
 
+### Releasing the Android app
+
+`scripts/release.sh` builds the signed APK on your machine and publishes it as a GitHub release, so the signing key never leaves your computer. It needs `keystore.properties` (see `app/build.gradle.kts`) and the [GitHub CLI](https://cli.github.com/) (`gh`), logged in.
+
+1. Bump `versionCode` and `versionName` in `app/build.gradle.kts`.
+2. Move the changes under `## [Unreleased]` in `CHANGELOG.md` to a new `## [<version>] - <date>` heading.
+3. Merge to `master`, then check out `master`.
+4. Run:
+
+```sh
+scripts/release.sh --dry-run 1.3.0   # checks, tests and builds, but doesn't publish
+scripts/release.sh 1.3.0             # same, then asks before creating the v1.3.0 release
+```
+
+It stops early if:
+- the tree isn't clean, or `master` isn't in sync with GitHub
+- `versionName` or the changelog doesn't match the version you typed
+- `versionCode` wasn't raised since the last release
+- the tag already exists
+
+It then runs the unit tests and builds the APK, checking that it's signed and reports the right version. It saves `taskora-<version>.apk` and `SHA256SUMS` to `dist/<version>/`, and creates the release with both files attached and that version's changelog section as the notes.
+
 ## Desktop app (Linux and Windows, in progress)
 
 An early desktop version lives in `desktop/`, a separate Compose Desktop app with its own Gradle build. It needs JDK 21.
