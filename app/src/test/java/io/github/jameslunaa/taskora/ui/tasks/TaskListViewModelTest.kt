@@ -240,6 +240,14 @@ class TaskListViewModelTest {
     }
 
     @Test
+    fun reorderLists_changesTheDrawerOrder() = runWithState {
+        val workId = listRepository.addList("Work", 0)
+        val homeId = listRepository.addList("Home", 0)
+        viewModel.reorderLists(listOf(homeId, TaskList.INBOX_ID, workId))
+        assertEquals(listOf("Home", "Inbox", "Work"), viewModel.uiState.value.lists.map { it.name })
+    }
+
+    @Test
     fun reorder_inAComputedSortMode_switchesTheListToMyOrder() = runWithState {
         viewModel.addTask("b")
         viewModel.addTask("a")

@@ -7,6 +7,18 @@ The Android app's releases are `[x.y.z]` (tag `vx.y.z`); the desktop app has its
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-24
+
+### Added
+
+- **Reorder lists**: long-press a list in the drawer and drag it to a new place. The order is saved and used everywhere lists appear.
+
+## [Desktop 0.3.0] - 2026-11-24
+
+### Added
+
+- **Reorder lists**: press and hold a list in the sidebar, then drag it to a new place. The order is saved and used everywhere lists appear.
+
 ## [1.2.0] - 2026-11-03
 
 ### Added
