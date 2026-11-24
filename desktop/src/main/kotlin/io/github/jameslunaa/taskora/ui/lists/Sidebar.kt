@@ -1,5 +1,6 @@
 package io.github.jameslunaa.taskora.ui.lists
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,9 +27,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +53,8 @@ import io.github.jameslunaa.taskora.resources.taskora_logo
 import io.github.jameslunaa.taskora.ui.theme.listColor
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 /** The always-visible list column, the desktop counterpart of the phone's drawer. */
 @Composable
@@ -54,6 +64,8 @@ fun Sidebar(
     selectedListId: Long?,
     searching: Boolean,
     onSelect: (Long) -> Unit,
+    /** Long-press and drag a list to move it; called on release with every list's id in the new order. */
+    onReorder: (List<Long>) -> Unit,
     onSearch: () -> Unit,
     onNewList: () -> Unit,
     onSettings: () -> Unit,
@@ -110,16 +122,49 @@ fun Sidebar(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
 
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(lists, key = { it.id }) { list ->
-                NavigationDrawerItem(
-                    label = { Text(list.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    icon = { ColorDot(list.color) },
-                    badge = { CountBadge(list.activeTaskCount) },
-                    selected = list.id == selectedListId,
-                    onClick = { onSelect(list.id) },
-                    colors = itemColors,
-                )
+        // Drag order is kept locally while a drag is in progress and saved on release.
+        val lazyListState = rememberLazyListState()
+        var dragLists by remember(lists) { mutableStateOf(lists) }
+        var moved by remember { mutableStateOf(false) }
+        // The item also sees the release that ends a long press as a click; that click must not open the list.
+        var longPressEndedAt by remember { mutableLongStateOf(0L) }
+        var longPressing by remember { mutableStateOf(false) }
+        val reorderState = rememberReorderableLazyListState(lazyListState) { from, to ->
+            val fromIndex = dragLists.indexOfFirst { it.id == from.key }
+            val toIndex = dragLists.indexOfFirst { it.id == to.key }
+            if (fromIndex >= 0 && toIndex >= 0) {
+                moved = true
+                dragLists = dragLists.toMutableList().apply { add(toIndex, removeAt(fromIndex)) }
+            }
+        }
+        LazyColumn(state = lazyListState, modifier = Modifier.weight(1f)) {
+            items(dragLists, key = { it.id }) { list ->
+                ReorderableItem(reorderState, key = list.id) { isDragging ->
+                    val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "drag elevation")
+                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerLow, shadowElevation = elevation) {
+                        NavigationDrawerItem(
+                            label = { Text(list.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            icon = { ColorDot(list.color) },
+                            badge = { CountBadge(list.activeTaskCount) },
+                            selected = list.id == selectedListId,
+                            onClick = {
+                                if (!longPressing && System.currentTimeMillis() - longPressEndedAt >= 500) onSelect(list.id)
+                            },
+                            colors = itemColors,
+                            modifier = Modifier.longPressDraggableHandle(
+                                onDragStarted = {
+                                    moved = false
+                                    longPressing = true
+                                },
+                                onDragStopped = {
+                                    longPressing = false
+                                    longPressEndedAt = System.currentTimeMillis()
+                                    if (moved) onReorder(dragLists.map { it.id })
+                                },
+                            ),
+                        )
+                    }
+                }
             }
         }
 

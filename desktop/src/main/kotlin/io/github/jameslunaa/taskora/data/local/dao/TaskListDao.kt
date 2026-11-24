@@ -3,6 +3,7 @@ package io.github.jameslunaa.taskora.data.local.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import io.github.jameslunaa.taskora.data.local.entity.TaskListEntity
 import io.github.jameslunaa.taskora.data.local.entity.TaskListWithCount
@@ -30,6 +31,15 @@ interface TaskListDao {
 
     @Update
     suspend fun update(list: TaskListEntity)
+
+    @Query("UPDATE task_lists SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun setSortOrder(id: Long, sortOrder: Int)
+
+    /** Gives each list the index of its id in [orderedIds]. */
+    @Transaction
+    suspend fun setSortOrders(orderedIds: List<Long>) {
+        orderedIds.forEachIndexed { index, id -> setSortOrder(id, index) }
+    }
 
     @Query("DELETE FROM task_lists WHERE id = :id")
     suspend fun deleteById(id: Long)

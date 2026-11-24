@@ -136,6 +136,7 @@ fun TaskListScreen(
             onSetCompleted = viewModel::setTasksCompleted,
             onMoveTasks = viewModel::moveTasks,
             onReorder = viewModel::reorder,
+            onReorderLists = viewModel::reorderLists,
         ),
     )
 }
@@ -164,6 +165,7 @@ class TaskListActions(
     val onSetCompleted: (Collection<Long>, Boolean) -> Unit = { _, _ -> },
     val onMoveTasks: (Collection<Long>, Long) -> Unit = { _, _ -> },
     val onReorder: (List<Long>) -> Unit = {},
+    val onReorderLists: (List<Long>) -> Unit = {},
 )
 
 /** A dialog opened for [ids], either from the long-press sheet (one task) or from selection mode. */
@@ -267,6 +269,7 @@ fun TaskListContent(
                     scope.launch { drawerState.close() }
                     actions.onOpenList(list)
                 },
+                onReorder = actions.onReorderLists,
                 onAllTasks = {
                     scope.launch { drawerState.close() }
                     actions.onOpenAllTasks()

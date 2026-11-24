@@ -187,6 +187,7 @@ fun TaskoraApp(
                     searching = false
                     deviceFingerprint = null
                 },
+                onReorder = listViewModel::reorderLists,
                 onSearch = {
                     deviceFingerprint = null
                     shortcuts.openSearch()

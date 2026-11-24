@@ -35,6 +35,10 @@ class FakeTaskListRepository(
 
     override suspend fun updateList(list: TaskList) = lists.update { all -> all.map { if (it.id == list.id) list else it } }
 
+    override suspend fun reorderLists(orderedIds: List<Long>) = lists.update { all ->
+        all.map { list -> list.copy(sortOrder = orderedIds.indexOf(list.id)) }.sortedBy { it.sortOrder }
+    }
+
     override suspend fun deleteList(id: Long) = lists.update { all -> all.filterNot { it.id == id } }
 }
 

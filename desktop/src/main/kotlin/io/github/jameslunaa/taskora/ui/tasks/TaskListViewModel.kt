@@ -171,6 +171,11 @@ class TaskListViewModel(
         viewModelScope.launch { taskRepository.moveTasks(ids, targetListId) }
     }
 
+    /** Persists a drag in the sidebar; [orderedIds] is every list in its new order. */
+    fun reorderLists(orderedIds: List<Long>) {
+        viewModelScope.launch { taskListRepository.reorderLists(orderedIds) }
+    }
+
     /** Persists a drag; [orderedIds] is the list's active tasks in their new order, which becomes "My order". */
     fun reorder(orderedIds: List<Long>) {
         val list = uiState.value.list

@@ -15,6 +15,9 @@ interface TaskListRepository {
     suspend fun addList(name: String, color: Int): Long
     suspend fun updateList(list: TaskList)
 
+    /** Saves a drag of the lists: [orderedIds] is every list in its new order. */
+    suspend fun reorderLists(orderedIds: List<Long>)
+
     /** Deletes the list and all its tasks. The Inbox can't be deleted. */
     suspend fun deleteList(id: Long)
 }
@@ -33,6 +36,8 @@ class OfflineTaskListRepository @Inject constructor(
         dao.insert(TaskList(name = name.trim(), color = color, sortOrder = dao.nextSortOrder()).toEntity())
 
     override suspend fun updateList(list: TaskList) = dao.update(list.toEntity())
+
+    override suspend fun reorderLists(orderedIds: List<Long>) = dao.setSortOrders(orderedIds)
 
     override suspend fun deleteList(id: Long) {
         require(id != TaskList.INBOX_ID) { "The Inbox can't be deleted" }
