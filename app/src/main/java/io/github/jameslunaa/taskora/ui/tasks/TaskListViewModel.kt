@@ -59,6 +59,11 @@ data class TaskListUiState(
     val selectedIds: Set<Long> = emptySet(),
     /** Applied to both active and completed tasks; it carries over to other lists. */
     val dayFilter: DayFilter = DayFilter.ALL,
+    /**
+     * Lists whose tasks All tasks hides (null is the tasks in no list). Not saved: it's gone once
+     * All tasks closes.
+     */
+    val hiddenListIds: Set<Long?> = emptySet(),
 ) {
     val activeTasks: List<Task> get() = sections.flatMap { it.tasks }
     val isEmpty: Boolean get() = activeTasks.isEmpty() && completedTasks.isEmpty()
@@ -85,16 +90,19 @@ class TaskListViewModel @Inject constructor(
     val events: Flow<TaskListEvent> = _events.receiveAsFlow()
 
     private val selection = MutableStateFlow<Set<Long>>(emptySet())
+    private val hiddenListIds = MutableStateFlow<Set<Long?>>(emptySet())
 
     val uiState: StateFlow<TaskListUiState> = combine(
         if (isAllTasks) flowOf(null) else taskListRepository.observeList(listId),
         taskListRepository.observeLists(),
         if (isAllTasks) taskRepository.observeAllTasks() else taskRepository.observeTasks(listId),
-        selection,
+        combine(selection, hiddenListIds, ::Pair),
         settingsRepository.settings.map { it.dayFilter }.distinctUntilChanged(),
-    ) { list, lists, allTasks, selected, dayFilter ->
+    ) { list, lists, allTasks, (selected, hidden), dayFilter ->
         val today = LocalDate.now(clock)
-        val tasks = if (dayFilter == DayFilter.ALL) allTasks else allTasks.filter { it.matchesDay(dayFilter, today) }
+        val tasks = allTasks.filter {
+            (dayFilter == DayFilter.ALL || it.matchesDay(dayFilter, today)) && it.listId !in hidden
+        }
         val (completed, active) = tasks.partition { it.isCompleted }
         val sections = if (isAllTasks) {
             val byList = active.groupBy { it.listId }
@@ -118,6 +126,8 @@ class TaskListViewModel @Inject constructor(
             // Deleted, moved-away or filtered-out tasks drop out of the selection.
             selectedIds = selected.intersect(tasks.mapTo(HashSet()) { it.id }),
             dayFilter = dayFilter,
+            // A deleted list can't be hidden anymore.
+            hiddenListIds = hidden.filterTo(HashSet()) { id -> id == null || lists.any { it.id == id } },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskListUiState())
 
@@ -125,10 +135,19 @@ class TaskListViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setDayFilter(filter) }
     }
 
+    /** Shows or hides [listId]'s tasks in All tasks; a null [listId] is the tasks in no list. */
+    fun setListShown(listId: Long?, shown: Boolean) =
+        hiddenListIds.update { if (shown) it - listId else it + listId }
+
+    fun showAllLists() {
+        hiddenListIds.value = emptySet()
+    }
+
     fun addTask(title: String) {
         if (title.isBlank()) return
-        // Tasks added in All tasks are in no list.
+        // Tasks added in All tasks are in no list, which is shown again so the new task doesn't vanish.
         val target = if (isAllTasks) null else listId
+        if (isAllTasks) setListShown(null, true)
         // Under a day filter the new task is due that day, so it doesn't vanish once added.
         val today = LocalDate.now(clock)
         val dueDate = when (uiState.value.dayFilter) {
@@ -154,8 +173,11 @@ class TaskListViewModel @Inject constructor(
     fun clearCompleted() {
         viewModelScope.launch {
             if (isAllTasks) {
-                taskRepository.clearCompleted(null)
-                uiState.value.lists.forEach { taskRepository.clearCompleted(it.id) }
+                // Only the lists on screen: completed tasks of hidden lists aren't visible to clear.
+                val hidden = hiddenListIds.value
+                (listOf(null) + uiState.value.lists.map { it.id })
+                    .filter { it !in hidden }
+                    .forEach { taskRepository.clearCompleted(it) }
             } else {
                 taskRepository.clearCompleted(listId)
             }

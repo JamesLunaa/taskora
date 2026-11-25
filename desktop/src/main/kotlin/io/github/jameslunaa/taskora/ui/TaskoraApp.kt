@@ -237,6 +237,8 @@ fun TaskoraApp(
                         onClearCompleted = listViewModel::clearCompleted,
                         onSortChange = listViewModel::setSortMode,
                         onDayFilterChange = listViewModel::setDayFilter,
+                        onListShownChange = listViewModel::setListShown,
+                        onShowAllLists = listViewModel::showAllLists,
                         onReorder = listViewModel::reorder,
                         bulkActions = bulkActions,
                         onToggleSelection = listViewModel::toggleSelection,

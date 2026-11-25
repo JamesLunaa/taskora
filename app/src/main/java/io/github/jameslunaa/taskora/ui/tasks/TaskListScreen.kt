@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
@@ -28,12 +29,15 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -68,6 +72,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -80,6 +89,7 @@ import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.domain.model.TaskSortMode
 import io.github.jameslunaa.taskora.ui.common.headerBandTopAppBarColors
 import io.github.jameslunaa.taskora.ui.lists.ListColors
+import io.github.jameslunaa.taskora.ui.lists.ListDot
 import io.github.jameslunaa.taskora.ui.lists.ListEditorDialog
 import io.github.jameslunaa.taskora.ui.lists.ListsDrawer
 import io.github.jameslunaa.taskora.ui.lists.SortDialog
@@ -126,6 +136,8 @@ fun TaskListScreen(
             onDeleteList = viewModel::deleteList,
             onSortModeChange = viewModel::setSortMode,
             onDayFilterChange = viewModel::setDayFilter,
+            onListShownChange = viewModel::setListShown,
+            onShowAllLists = viewModel::showAllLists,
             onSearch = onSearch,
             onOpenSettings = onOpenSettings,
             onToggleSelection = viewModel::toggleSelection,
@@ -155,6 +167,9 @@ class TaskListActions(
     val onDeleteList: () -> Unit = {},
     val onSortModeChange: (TaskSortMode, Boolean) -> Unit = { _, _ -> },
     val onDayFilterChange: (DayFilter) -> Unit = {},
+    /** All tasks only: shows or hides a list's tasks (null for the tasks in no list). */
+    val onListShownChange: (Long?, Boolean) -> Unit = { _, _ -> },
+    val onShowAllLists: () -> Unit = {},
     val onSearch: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onToggleSelection: (Long) -> Unit = {},
@@ -316,7 +331,16 @@ fun TaskListContent(
                             },
                         )
                     }
-                    DayFilterChips(uiState.dayFilter, actions.onDayFilterChange)
+                    DayFilterChips(uiState.dayFilter, actions.onDayFilterChange) {
+                        if (uiState.isAllTasks) {
+                            ListFilterChip(
+                                lists = uiState.lists,
+                                hidden = uiState.hiddenListIds,
+                                onShownChange = actions.onListShownChange,
+                                onShowAll = actions.onShowAllLists,
+                            )
+                        }
+                    }
                 }
             },
             bottomBar = { if (selecting) SelectionBottomBar(selectionActions) },
@@ -645,9 +669,12 @@ private fun CompletedHeader(count: Int, expanded: Boolean, onToggle: () -> Unit,
     )
 }
 
-/** Today/Tomorrow chips under the top bar; tapping the selected one shows everything again. */
+/**
+ * Today/Tomorrow chips under the top bar; tapping the selected one shows everything again.
+ * [extra] chips follow them.
+ */
 @Composable
-private fun DayFilterChips(selected: DayFilter, onSelect: (DayFilter) -> Unit) {
+private fun DayFilterChips(selected: DayFilter, onSelect: (DayFilter) -> Unit, extra: @Composable () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -662,6 +689,50 @@ private fun DayFilterChips(selected: DayFilter, onSelect: (DayFilter) -> Unit) {
                 onClick = { onSelect(if (selected == filter) DayFilter.ALL else filter) },
                 label = { Text(stringResource(label)) },
             )
+        }
+        extra()
+    }
+}
+
+/** All tasks' Lists chip: a menu that hides or shows each list's tasks until All tasks closes. */
+@Composable
+private fun ListFilterChip(
+    lists: List<TaskList>,
+    hidden: Set<Long?>,
+    onShownChange: (Long?, Boolean) -> Unit,
+    onShowAll: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        FilterChip(
+            selected = hidden.isNotEmpty(),
+            onClick = { expanded = true },
+            label = { Text(stringResource(R.string.lists)) },
+            trailingIcon = {
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize))
+            },
+        )
+        // The menu stays open so several lists can be toggled in one go.
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.show_all_lists)) },
+                enabled = hidden.isNotEmpty(),
+                onClick = onShowAll,
+            )
+            HorizontalDivider()
+            (listOf(null) + lists).forEach { list ->
+                val shown = list?.id !in hidden
+                DropdownMenuItem(
+                    text = { Text(list?.name ?: stringResource(R.string.no_list)) },
+                    modifier = Modifier.semantics {
+                        role = Role.Checkbox
+                        toggleableState = ToggleableState(shown)
+                    },
+                    leadingIcon = { ListDot(list?.color, Modifier.size(12.dp)) },
+                    trailingIcon = { Checkbox(checked = shown, onCheckedChange = null) },
+                    onClick = { onShownChange(list?.id, !shown) },
+                )
+            }
         }
     }
 }
