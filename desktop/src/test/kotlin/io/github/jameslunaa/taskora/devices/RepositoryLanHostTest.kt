@@ -23,12 +23,13 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import io.github.jameslunaa.taskora.testing.INBOX_ID
 
 class RepositoryLanHostTest {
     private val clock = Clock.fixed(Instant.parse("2026-10-30T12:00:00Z"), ZoneOffset.UTC)
     private val lists = FakeTaskListRepository(
         listOf(
-            TaskList(id = TaskList.INBOX_ID, name = "Inbox", color = 1),
+            TaskList(id = INBOX_ID, name = "Inbox", color = 1),
             TaskList(id = 2, name = "Home", color = 2, sortMode = TaskSortMode.PRIORITY),
         ),
     )
@@ -42,10 +43,11 @@ class RepositoryLanHostTest {
         val done = tasks.addTask(Task(listId = 2, title = "Done"))
         tasks.setTaskCompleted(done, true)
         tasks.addTask(Task(listId = 1, title = "Inbox task"))
+        tasks.addTask(Task(listId = null, title = "Loose"))
 
         assertEquals(listOf("High", "Low"), host.tasks(2, includeCompleted = false)!!.map { it.title })
         assertEquals(3, host.tasks(2, includeCompleted = true)!!.size)
-        assertEquals(listOf("Inbox task", "High", "Low"), host.tasks(LanHost.ALL_LISTS, false)!!.map { it.title })
+        assertEquals(listOf("Loose", "Inbox task", "High", "Low"), host.tasks(LanHost.ALL_LISTS, false)!!.map { it.title })
         assertNull(host.tasks(99, false))
         assertEquals(listOf("Inbox", "Home"), host.lists().map { it.name })
     }
@@ -61,7 +63,7 @@ class RepositoryLanHostTest {
     }
 
     @Test
-    fun addTask_copiesSubtasks_fallsBackToInbox_andDropsPastReminders() = runTest {
+    fun addTask_copiesSubtasks_fallsBackToNoList_andDropsPastReminders() = runTest {
         val sent = WireTask(
             id = 500, listId = 7, title = "  Call mum ", priority = WirePriority.HIGH, dueDate = LocalDate.of(2026, 11, 1),
             reminderAt = Instant.parse("2026-10-29T09:00:00Z"),
@@ -69,14 +71,15 @@ class RepositoryLanHostTest {
         )
         val id = host.addTask(listId = 2, task = sent)
         val added = tasks.getTask(id)!!
-        assertEquals(2, added.listId)
+        assertEquals(2L, added.listId)
         assertEquals("Call mum", added.title)
         assertEquals(Priority.HIGH, added.priority)
         assertNull(added.reminderAt)
         assertEquals(listOf("Ask about Sunday" to false, "Birthday" to true), added.subtasks.map { it.title to it.isCompleted })
 
         val future = host.addTask(listId = 99, task = sent.copy(reminderAt = Instant.parse("2026-11-01T08:00:00Z")))
-        assertEquals(TaskList.INBOX_ID, tasks.getTask(future)!!.listId)
+        // A list that's gone there means no list.
+        assertNull(tasks.getTask(future)!!.listId)
         assertEquals(Instant.parse("2026-11-01T08:00:00Z"), tasks.getTask(future)!!.reminderAt)
     }
 

@@ -30,7 +30,7 @@ import java.time.LocalTime
 )
 data class TaskEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val listId: Long,
+    val listId: Long?,
     val title: String,
     val notes: String,
     val dueDate: LocalDate?,

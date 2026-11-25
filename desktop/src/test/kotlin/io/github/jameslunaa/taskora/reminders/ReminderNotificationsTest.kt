@@ -18,6 +18,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import io.github.jameslunaa.taskora.testing.INBOX_ID
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReminderNotificationsTest {
@@ -29,7 +30,7 @@ class ReminderNotificationsTest {
 
     private suspend fun addTask(reminderAt: Instant?, completed: Boolean = false) = tasks.addTask(
         Task(
-            listId = TaskList.INBOX_ID,
+            listId = INBOX_ID,
             title = "Call mom",
             notes = "\nAbout Sunday\nmore",
             dueDate = LocalDate.of(2026, 10, 28),

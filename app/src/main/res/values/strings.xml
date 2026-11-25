@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Taskora</string>
-    <string name="inbox">Inbox</string>
 
     <!-- Common -->
     <string name="back">Back</string>
@@ -51,6 +50,7 @@
         <item quantity="other">Delete \u201c%1$s\u201d and its %2$d tasks?</item>
     </plurals>
     <string name="list">List</string>
+    <string name="no_list">No list</string>
 
     <!-- Sorting -->
     <string name="sort_by">Sort by</string>

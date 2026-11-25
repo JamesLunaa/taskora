@@ -16,7 +16,7 @@ interface TaskListRepository {
     /** Saves a drag of the lists: [orderedIds] is every list in its new order. */
     suspend fun reorderLists(orderedIds: List<Long>)
 
-    /** Deletes the list and all its tasks. The Inbox can't be deleted. */
+    /** Deletes the list and all its tasks. */
     suspend fun deleteList(id: Long)
 }
 
@@ -36,8 +36,5 @@ class OfflineTaskListRepository(
 
     override suspend fun reorderLists(orderedIds: List<Long>) = dao.setSortOrders(orderedIds)
 
-    override suspend fun deleteList(id: Long) {
-        require(id != TaskList.INBOX_ID) { "The Inbox can't be deleted" }
-        dao.deleteById(id)
-    }
+    override suspend fun deleteList(id: Long) = dao.deleteById(id)
 }

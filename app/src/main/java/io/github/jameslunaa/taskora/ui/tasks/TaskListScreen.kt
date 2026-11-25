@@ -108,7 +108,7 @@ fun TaskListScreen(
         }
     }
     LaunchedEffect(uiState.isListMissing) {
-        if (uiState.isListMissing) onOpenList(TaskList.INBOX_ID)
+        if (uiState.isListMissing) onOpenList(TaskList.ALL_TASKS_ID)
     }
     TaskListContent(
         uiState = uiState,
@@ -163,7 +163,7 @@ class TaskListActions(
     val onSetDueDate: (Collection<Long>, LocalDate?) -> Unit = { _, _ -> },
     val onSetPriority: (Collection<Long>, Priority) -> Unit = { _, _ -> },
     val onSetCompleted: (Collection<Long>, Boolean) -> Unit = { _, _ -> },
-    val onMoveTasks: (Collection<Long>, Long) -> Unit = { _, _ -> },
+    val onMoveTasks: (Collection<Long>, Long?) -> Unit = { _, _ -> },
     val onReorder: (List<Long>) -> Unit = {},
     val onReorderLists: (List<Long>) -> Unit = {},
 )
@@ -309,7 +309,7 @@ fun TaskListContent(
                                 }
                                 OverflowMenu(
                                     canEditList = uiState.list != null,
-                                    canDeleteList = uiState.list?.isInbox == false,
+                                    canDeleteList = uiState.list != null,
                                     clearCompletedEnabled = uiState.completedTasks.isNotEmpty(),
                                     onSelect = { dialog = it },
                                 )
@@ -463,7 +463,7 @@ fun TaskListContent(
             )
             BulkKind.MOVE -> MoveToListDialog(
                 lists = uiState.lists,
-                onSelect = { actions.onMoveTasks(target.ids, it.id) },
+                onSelect = { actions.onMoveTasks(target.ids, it?.id) },
                 onDismiss = close,
             )
         }

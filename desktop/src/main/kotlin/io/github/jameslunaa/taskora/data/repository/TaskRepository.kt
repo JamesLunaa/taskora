@@ -47,7 +47,8 @@ interface TaskRepository {
 
     /** Puts back a deleted [task] exactly as it was, subtasks included. */
     suspend fun restoreTask(task: Task)
-    suspend fun clearCompleted(listId: Long)
+    /** A null [listId] clears the completed tasks that are in no list. */
+    suspend fun clearCompleted(listId: Long?)
 
     /** Applies [transform] to each task in [ids] through [updateTask]; unknown ids are skipped. */
     suspend fun updateTasks(ids: Collection<Long>, transform: (Task) -> Task)
@@ -57,8 +58,8 @@ interface TaskRepository {
     suspend fun deleteTasks(ids: Collection<Long>): List<Task>
     suspend fun restoreTasks(tasks: List<Task>)
 
-    /** Moves the tasks to the end of [listId], keeping their relative order. */
-    suspend fun moveTasks(ids: Collection<Long>, listId: Long)
+    /** Moves the tasks to the end of [listId] (null for no list), keeping their relative order. */
+    suspend fun moveTasks(ids: Collection<Long>, listId: Long?)
 
     /** Stores [orderedIds] as the manual order (the first id gets position 0). */
     suspend fun reorderTasks(orderedIds: List<Long>)
@@ -165,7 +166,7 @@ class OfflineTaskRepository(
         syncReminder(task)
     }
 
-    override suspend fun clearCompleted(listId: Long) = taskDao.deleteCompleted(listId)
+    override suspend fun clearCompleted(listId: Long?) = taskDao.deleteCompleted(listId)
 
     override suspend fun updateTasks(ids: Collection<Long>, transform: (Task) -> Task) {
         ids.forEach { id -> getTask(id)?.let { updateTask(transform(it)) } }
@@ -180,7 +181,7 @@ class OfflineTaskRepository(
 
     override suspend fun restoreTasks(tasks: List<Task>) = tasks.forEach { restoreTask(it) }
 
-    override suspend fun moveTasks(ids: Collection<Long>, listId: Long) {
+    override suspend fun moveTasks(ids: Collection<Long>, listId: Long?) {
         ids.mapNotNull { getTask(it) }
             .sortedWith(compareBy({ it.listId }, { it.sortOrder }, { it.id }))
             .forEach { updateTask(it.copy(listId = listId, sortOrder = taskDao.nextSortOrder(listId))) }

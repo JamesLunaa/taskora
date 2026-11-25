@@ -40,7 +40,7 @@ fun Task.toWire() = WireTask(
  * A new local task from a [WireTask] sent by another device (or copied from one): fresh ids,
  * [listId] here, and no reminder if it's already past.
  */
-fun WireTask.toNewTask(listId: Long, now: Instant): Task = Task(
+fun WireTask.toNewTask(listId: Long?, now: Instant): Task = Task(
     listId = listId,
     title = title.trim(),
     notes = notes,

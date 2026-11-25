@@ -8,7 +8,7 @@ import io.github.jameslunaa.taskora.data.local.TaskoraDatabase
 import io.github.jameslunaa.taskora.domain.model.Frequency
 import io.github.jameslunaa.taskora.domain.model.Recurrence
 import io.github.jameslunaa.taskora.domain.model.Task
-import io.github.jameslunaa.taskora.domain.model.TaskList
+import io.github.jameslunaa.taskora.data.local.entity.TaskListEntity
 import io.github.jameslunaa.taskora.reminders.ReminderScheduler
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -46,8 +46,8 @@ class OfflineTaskRepositoryTest {
     @Before
     fun setUp() {
         db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext<Context>(), TaskoraDatabase::class.java)
-            .addCallback(TaskoraDatabase.SeedCallback("Inbox"))
             .build()
+        runBlocking { db.taskListDao().insert(TaskListEntity(id = INBOX_ID, name = "Inbox", color = 0, sortOrder = 0)) }
         scheduler = FakeScheduler()
         repository = OfflineTaskRepository(db.taskDao(), db.subtaskDao(), scheduler, Clock.fixed(now, ZoneOffset.UTC))
     }
@@ -55,12 +55,12 @@ class OfflineTaskRepositoryTest {
     @After
     fun tearDown() = db.close()
 
-    private suspend fun tasks() = repository.observeTasks(TaskList.INBOX_ID).first()
+    private suspend fun tasks() = repository.observeTasks(INBOX_ID).first()
 
     @Test
     fun completingRecurringTask_createsNextOccurrenceOnce() = runBlocking {
         val id = repository.addTask(
-            Task(listId = TaskList.INBOX_ID, title = "Water", dueDate = today, recurrence = Recurrence(Frequency.DAILY)),
+            Task(listId = INBOX_ID, title = "Water", dueDate = today, recurrence = Recurrence(Frequency.DAILY)),
         )
         repository.addSubtask(id, "Balcony")
 
@@ -78,7 +78,7 @@ class OfflineTaskRepositoryTest {
     @Test
     fun completingViaUpdate_alsoCreatesNextOccurrence() = runBlocking {
         val id = repository.addTask(
-            Task(listId = TaskList.INBOX_ID, title = "Water", dueDate = today, recurrence = Recurrence(Frequency.WEEKLY)),
+            Task(listId = INBOX_ID, title = "Water", dueDate = today, recurrence = Recurrence(Frequency.WEEKLY)),
         )
         val task = repository.getTask(id)!!
         repository.updateTask(task.copy(isCompleted = true, completedAt = now))
@@ -88,7 +88,7 @@ class OfflineTaskRepositoryTest {
     @Test
     fun reminders_followCompletionAndDeletion() = runBlocking {
         val at = now.plusSeconds(3600)
-        val id = repository.addTask(Task(listId = TaskList.INBOX_ID, title = "Call", reminderAt = at))
+        val id = repository.addTask(Task(listId = INBOX_ID, title = "Call", reminderAt = at))
         assertEquals(at, scheduler.scheduled[id])
 
         repository.setTaskCompleted(id, true)
@@ -99,5 +99,9 @@ class OfflineTaskRepositoryTest {
 
         repository.deleteTask(id)
         assertTrue(id !in scheduler.scheduled)
+    }
+
+    private companion object {
+        const val INBOX_ID = 1L
     }
 }

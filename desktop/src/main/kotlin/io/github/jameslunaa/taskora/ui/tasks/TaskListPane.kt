@@ -192,7 +192,7 @@ fun TaskListPane(
                         }
                     }
                     ListMenu(
-                        canDeleteList = list != null && !list.isInbox,
+                        canDeleteList = list != null,
                         canClearCompleted = uiState.completedTasks.isNotEmpty(),
                         onSelect = { dialog = it },
                     )

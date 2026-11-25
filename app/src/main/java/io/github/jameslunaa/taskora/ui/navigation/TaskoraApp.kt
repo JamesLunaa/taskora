@@ -14,7 +14,7 @@ import kotlinx.serialization.Serializable
 
 // Property names double as SavedStateHandle keys in the ViewModels.
 @Serializable
-data class TaskListRoute(val listId: Long = TaskList.INBOX_ID)
+data class TaskListRoute(val listId: Long = TaskList.ALL_TASKS_ID)
 
 @Serializable
 data class TaskDetailRoute(val taskId: Long)

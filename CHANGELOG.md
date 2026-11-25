@@ -7,6 +7,16 @@ The Android app's releases are `[x.y.z]` (tag `vx.y.z`); the desktop app has its
 
 ## [Unreleased]
 
+### Added
+
+- **Tasks without a list**: tasks you add in All tasks no longer go to the Inbox. They stay in no list and show at the top of All tasks. Move to list and a task's list picker offer "No list".
+
+### Changed
+
+- The app opens on **All tasks**.
+- The **Inbox** is now an ordinary list: rename it or delete it like any other. New installs start without one.
+- Desktop: tasks copied from or sent by another device land in no list instead of the Inbox.
+
 ## [1.3.0] - 2026-11-24
 
 ### Added

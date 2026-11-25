@@ -31,13 +31,15 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import io.github.jameslunaa.taskora.testing.inMemoryDatabaseWithInbox
+import io.github.jameslunaa.taskora.testing.INBOX_ID
 
 @OptIn(ExperimentalTestApi::class)
 class StickyNoteTest {
     @get:Rule
     val rule = createComposeRule()
 
-    private val database = TaskoraDatabase.create(file = null, inboxName = "Inbox")
+    private val database = inMemoryDatabaseWithInbox()
     private val container = AppContainer(database, FakeSettingsRepository(), FakeNotifier(), FakeAutostart())
 
     private val events = mutableStateListOf<String>()
@@ -48,7 +50,7 @@ class StickyNoteTest {
     private fun waitFor(text: String) = rule.waitUntilAtLeastOneExists(hasText(text), timeoutMillis = 5_000)
 
     private fun setNote(capabilities: WindowCapabilities = WindowCapabilities(below = true, opacity = true)) {
-        val viewModel = TaskListViewModel(TaskList.INBOX_ID, container.taskListRepository, container.taskRepository)
+        val viewModel = TaskListViewModel(INBOX_ID, container.taskListRepository, container.taskRepository)
         rule.setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             TaskoraTheme {

@@ -30,8 +30,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun getById(id: Long): TaskWithSubtasks?
 
-    @Query("SELECT COALESCE(MAX(sortOrder), -1) + 1 FROM tasks WHERE listId = :listId")
-    suspend fun nextSortOrder(listId: Long): Int
+    // `IS` instead of `=` so a null listId (no list) matches too.
+    @Query("SELECT COALESCE(MAX(sortOrder), -1) + 1 FROM tasks WHERE listId IS :listId")
+    suspend fun nextSortOrder(listId: Long?): Int
 
     @Insert
     suspend fun insert(task: TaskEntity): Long
@@ -76,13 +77,13 @@ interface TaskDao {
     suspend fun getWithPendingReminders(after: Instant): List<TaskEntity>
 
     @Query(
-        "SELECT COUNT(*) FROM tasks WHERE listId = :listId AND title = :title AND dueDate = :dueDate AND isCompleted = 0",
+        "SELECT COUNT(*) FROM tasks WHERE listId IS :listId AND title = :title AND dueDate = :dueDate AND isCompleted = 0",
     )
-    suspend fun countOpen(listId: Long, title: String, dueDate: LocalDate): Int
+    suspend fun countOpen(listId: Long?, title: String, dueDate: LocalDate): Int
 
     @Query("DELETE FROM tasks WHERE id = :id")
     suspend fun deleteById(id: Long)
 
-    @Query("DELETE FROM tasks WHERE listId = :listId AND isCompleted = 1")
-    suspend fun deleteCompleted(listId: Long)
+    @Query("DELETE FROM tasks WHERE listId IS :listId AND isCompleted = 1")
+    suspend fun deleteCompleted(listId: Long?)
 }

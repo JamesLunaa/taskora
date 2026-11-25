@@ -41,7 +41,7 @@ interface LanHost {
     /** False when there's no such task. Setting the state a task already has must do nothing. */
     suspend fun setCompleted(taskId: Long, completed: Boolean): Boolean
 
-    /** Adds a copy of [task] to [listId], or to the Inbox when it's null or gone; returns its new id. */
+    /** Adds a copy of [task] to [listId], or to no list when it's null or gone; returns its new id. */
     suspend fun addTask(listId: Long?, task: WireTask): Long
 
     /** Emits whenever lists or tasks change. */

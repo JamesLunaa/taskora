@@ -3,6 +3,7 @@ package io.github.jameslunaa.taskora.devices
 import io.github.jameslunaa.taskora.data.repository.TaskListRepository
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
 import io.github.jameslunaa.taskora.domain.model.TaskList
+import io.github.jameslunaa.taskora.domain.model.TaskSortMode
 import io.github.jameslunaa.taskora.domain.sortedFor
 import io.github.jameslunaa.taskora.lan.LanHost
 import io.github.jameslunaa.taskora.lan.WireList
@@ -25,9 +26,11 @@ class RepositoryLanHost(
     override suspend fun tasks(listId: Long, includeCompleted: Boolean): List<WireTask>? {
         val lists = taskListRepository.observeLists().first()
         val tasks = if (listId == LanHost.ALL_LISTS) {
-            // Grouped by list, in the sidebar's order, each list in its own sort order.
+            // As in All tasks: the tasks in no list first, then grouped by list in the sidebar's order,
+            // each list in its own sort order.
             val byList = taskRepository.observeAllTasks().first().groupBy { it.listId }
-            lists.flatMap { list -> byList[list.id].orEmpty().sortedFor(list.sortMode, list.sortDescending) }
+            byList[null].orEmpty().sortedFor(TaskSortMode.CREATED) +
+                lists.flatMap { list -> byList[list.id].orEmpty().sortedFor(list.sortMode, list.sortDescending) }
         } else {
             val list: TaskList = lists.firstOrNull { it.id == listId } ?: return null
             taskRepository.observeTasks(listId).first().sortedFor(list.sortMode, list.sortDescending)
@@ -44,7 +47,7 @@ class RepositoryLanHost(
 
     override suspend fun addTask(listId: Long?, task: WireTask): Long {
         val lists = taskListRepository.observeLists().first()
-        val target = listId?.takeIf { id -> lists.any { it.id == id } } ?: TaskList.INBOX_ID
+        val target = listId?.takeIf { id -> lists.any { it.id == id } }
         return taskRepository.addTaskWithSubtasks(task.toNewTask(target, Instant.now(clock)))
     }
 

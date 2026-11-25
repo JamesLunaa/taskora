@@ -26,7 +26,6 @@ import io.github.jameslunaa.taskora.reminders.NotifySendNotifier
 import io.github.jameslunaa.taskora.reminders.TrayNotifier
 import io.github.jameslunaa.taskora.resources.Res
 import io.github.jameslunaa.taskora.resources.app_name
-import io.github.jameslunaa.taskora.resources.inbox
 import io.github.jameslunaa.taskora.resources.open_taskora
 import io.github.jameslunaa.taskora.resources.quit
 import io.github.jameslunaa.taskora.resources.taskora_logo
@@ -79,10 +78,7 @@ fun main(args: Array<String>) {
     // Taskora already running: it shows its window (unless this is autostart) and this copy ends.
     val instance = SingleInstance.claim(dataDir, showWindow = !minimized) ?: return
     setWindowClass(Autostart.APP_ID)
-    val database = TaskoraDatabase.create(
-        file = File(dataDir, TaskoraDatabase.NAME),
-        inboxName = runBlocking { getString(Res.string.inbox) },
-    )
+    val database = TaskoraDatabase.create(File(dataDir, TaskoraDatabase.NAME))
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val settingsRepository = DataStoreSettingsRepository.create(
         File(dataDir, "settings.preferences_pb"),

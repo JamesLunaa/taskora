@@ -97,7 +97,7 @@ class TaskDetailViewModel(
 
     fun setPriority(priority: Priority) = edit { it.copy(priority = priority) }
 
-    fun moveToList(listId: Long) = edit { it.copy(listId = listId) }
+    fun moveToList(listId: Long?) = edit { it.copy(listId = listId) }
 
     fun setCompleted(completed: Boolean) = edit {
         it.copy(isCompleted = completed, completedAt = if (completed) Instant.now(clock) else null)

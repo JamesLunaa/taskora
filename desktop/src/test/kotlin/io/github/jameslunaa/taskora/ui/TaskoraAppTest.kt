@@ -26,6 +26,7 @@ import io.github.jameslunaa.taskora.ui.theme.TaskoraTheme
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
+import io.github.jameslunaa.taskora.testing.inMemoryDatabaseWithInbox
 
 /** Drives the whole window against an in-memory database. */
 @OptIn(ExperimentalTestApi::class)
@@ -33,7 +34,7 @@ class TaskoraAppTest {
     @get:Rule
     val rule = createComposeRule()
 
-    private val database = TaskoraDatabase.create(file = null, inboxName = "Inbox")
+    private val database = inMemoryDatabaseWithInbox()
 
     @After
     fun tearDown() = database.close()

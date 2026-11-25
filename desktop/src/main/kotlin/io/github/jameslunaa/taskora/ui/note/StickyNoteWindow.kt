@@ -96,7 +96,7 @@ fun StickyNoteWindow(
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         // The note's list was deleted.
         LaunchedEffect(uiState.isListMissing) {
-            if (uiState.isListMissing) windows.setNoteListId(TaskList.INBOX_ID)
+            if (uiState.isListMissing) windows.setNoteListId(TaskList.ALL_TASKS_ID)
         }
         val actions = remember(viewModel) {
             StickyNoteActions(

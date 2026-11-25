@@ -89,7 +89,7 @@ fun TaskoraApp(
     /** The desktop reports an accent color, so settings offer to use it. */
     systemAccentAvailable: Boolean = false,
 ) {
-    var listId by remember { mutableStateOf(TaskList.INBOX_ID) }
+    var listId by remember { mutableStateOf(TaskList.ALL_TASKS_ID) }
     var taskId by remember { mutableStateOf<Long?>(null) }
     var searching by remember { mutableStateOf(false) }
     var creatingList by remember { mutableStateOf(false) }
@@ -136,7 +136,7 @@ fun TaskoraApp(
     // The current list was deleted.
     LaunchedEffect(listState.isListMissing) {
         if (listState.isListMissing) {
-            listId = TaskList.INBOX_ID
+            listId = TaskList.ALL_TASKS_ID
             taskId = null
         }
     }

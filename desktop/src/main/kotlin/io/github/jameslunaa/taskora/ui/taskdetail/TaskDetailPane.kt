@@ -3,7 +3,6 @@ package io.github.jameslunaa.taskora.ui.taskdetail
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import io.github.jameslunaa.taskora.ui.icons.outlined.CalendarToday
@@ -71,6 +69,7 @@ import io.github.jameslunaa.taskora.resources.add_subtask
 import io.github.jameslunaa.taskora.resources.add_time
 import io.github.jameslunaa.taskora.resources.clear_reminder
 import io.github.jameslunaa.taskora.resources.clear_repeat
+import io.github.jameslunaa.taskora.resources.no_list
 import io.github.jameslunaa.taskora.resources.notifications_unavailable
 import io.github.jameslunaa.taskora.resources.remind_me
 import io.github.jameslunaa.taskora.resources.reminder
@@ -98,8 +97,8 @@ import io.github.jameslunaa.taskora.ui.common.dueText
 import io.github.jameslunaa.taskora.ui.common.label
 import io.github.jameslunaa.taskora.ui.common.recurrenceText
 import io.github.jameslunaa.taskora.ui.common.timeText
+import io.github.jameslunaa.taskora.ui.lists.ListDot
 import io.github.jameslunaa.taskora.ui.theme.TaskoraTheme
-import io.github.jameslunaa.taskora.ui.theme.listColor
 import org.jetbrains.compose.resources.stringResource
 import java.time.Instant
 import java.time.LocalDate
@@ -111,7 +110,7 @@ class TaskDetailActions(
     val onTitleChange: (String) -> Unit,
     val onNotesChange: (String) -> Unit,
     val onCompletedChange: (Boolean) -> Unit,
-    val onListChange: (Long) -> Unit,
+    val onListChange: (Long?) -> Unit,
     val onDueDateChange: (LocalDate?) -> Unit,
     val onDueTimeChange: (LocalTime?) -> Unit,
     val onPriorityChange: (Priority) -> Unit,
@@ -390,38 +389,33 @@ private fun RemovableChip(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ListPicker(listId: Long, lists: List<TaskList>, onSelect: (Long) -> Unit) {
+private fun ListPicker(listId: Long?, lists: List<TaskList>, onSelect: (Long?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val current = lists.firstOrNull { it.id == listId }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(
-            value = current?.name.orEmpty(),
+            value = current?.name ?: stringResource(Res.string.no_list),
             onValueChange = {},
             readOnly = true,
             singleLine = true,
             label = { Text(stringResource(Res.string.list)) },
-            leadingIcon = current?.let { { ColorDot(it.color) } },
+            leadingIcon = { ListDot(current?.color, Modifier.size(12.dp)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
             modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            lists.forEach { list ->
+            (listOf(null) + lists).forEach { list ->
                 DropdownMenuItem(
-                    text = { Text(list.name) },
-                    leadingIcon = { ColorDot(list.color) },
+                    text = { Text(list?.name ?: stringResource(Res.string.no_list)) },
+                    leadingIcon = { ListDot(list?.color, Modifier.size(12.dp)) },
                     onClick = {
                         expanded = false
-                        if (list.id != listId) onSelect(list.id)
+                        if (list?.id != listId) onSelect(list?.id)
                     },
                 )
             }
         }
     }
-}
-
-@Composable
-private fun ColorDot(color: Int) {
-    Box(Modifier.size(12.dp).background(listColor(color), CircleShape))
 }
 
 @Composable

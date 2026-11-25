@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AllInbox
-import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -124,16 +123,12 @@ fun ListsDrawer(
                                 if (!longPressing && SystemClock.uptimeMillis() - longPressEndedAt >= 500) onListClick(list)
                             },
                             icon = {
-                                if (list.isInbox) {
-                                    Icon(Icons.Outlined.Inbox, contentDescription = null, tint = listColor(list.color))
-                                } else {
-                                    Box(
-                                        Modifier
-                                            .padding(4.dp)
-                                            .size(16.dp)
-                                            .background(listColor(list.color), CircleShape),
-                                    )
-                                }
+                                Box(
+                                    Modifier
+                                        .padding(4.dp)
+                                        .size(16.dp)
+                                        .background(listColor(list.color), CircleShape),
+                                )
                             },
                             badge = {
                                 if (list.activeTaskCount > 0) Text(list.activeTaskCount.toString())

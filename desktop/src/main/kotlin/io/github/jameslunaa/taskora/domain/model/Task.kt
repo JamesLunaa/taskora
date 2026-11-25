@@ -6,7 +6,8 @@ import java.time.LocalTime
 
 data class Task(
     val id: Long = 0,
-    val listId: Long,
+    /** Null for a task in no list, which only All tasks shows. */
+    val listId: Long? = null,
     val title: String,
     val notes: String = "",
     val dueDate: LocalDate? = null,

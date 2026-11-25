@@ -8,6 +8,7 @@ import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.domain.model.TaskSortMode
 import io.github.jameslunaa.taskora.testing.FakeSettingsRepository
 import io.github.jameslunaa.taskora.testing.FakeTaskListRepository
+import io.github.jameslunaa.taskora.testing.INBOX_ID
 import io.github.jameslunaa.taskora.testing.FakeTaskRepository
 import io.github.jameslunaa.taskora.testing.MainDispatcherRule
 import kotlinx.coroutines.flow.collect
@@ -33,7 +34,7 @@ class TaskListViewModelTest {
     private val taskRepository = FakeTaskRepository(clock)
     private val listRepository = FakeTaskListRepository()
     private val settingsRepository = FakeSettingsRepository()
-    private var listId = TaskList.INBOX_ID
+    private var listId = INBOX_ID
 
     // Lazy so it's created after MainDispatcherRule has replaced Dispatchers.Main.
     private val viewModel by lazy {
@@ -122,19 +123,27 @@ class TaskListViewModelTest {
     }
 
     @Test
-    fun deleteList_marksListMissing_butInboxIsKept() = runTest {
+    fun deleteList_marksListMissing() = runTest {
         val workId = listRepository.addList("Work", 0)
         listId = workId
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
         viewModel.deleteList()
         assertTrue(viewModel.uiState.value.isListMissing)
-        assertEquals(listOf(TaskList.INBOX_ID), listRepository.lists.value.map { it.id })
+        assertEquals(listOf(INBOX_ID), listRepository.lists.value.map { it.id })
     }
 
     @Test
-    fun deleteList_isIgnoredForInbox() = runWithState {
+    fun deleteList_worksForTheInboxToo() = runWithState {
         viewModel.deleteList()
-        assertFalse(viewModel.uiState.value.isListMissing)
+        assertTrue(viewModel.uiState.value.isListMissing)
+        assertTrue(listRepository.lists.value.isEmpty())
+    }
+
+    @Test
+    fun opensAllTasks_withoutAListId() = runTest {
+        val viewModel = TaskListViewModel(SavedStateHandle(), listRepository, taskRepository, settingsRepository, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+        assertTrue(viewModel.uiState.value.isAllTasks)
     }
 
     private fun titles(tasks: List<Task>) = tasks.map(Task::title)
@@ -215,8 +224,9 @@ class TaskListViewModelTest {
         val workId = listRepository.addList("Work", 0)
         listRepository.addList("Empty", 0)
         taskRepository.addTask(Task(listId = workId, title = "w1"))
-        taskRepository.addTask(Task(listId = TaskList.INBOX_ID, title = "i1"))
+        taskRepository.addTask(Task(listId = INBOX_ID, title = "i1"))
         taskRepository.addTask(Task(listId = workId, title = "w2"))
+        taskRepository.addTask(Task(listId = null, title = "loose"))
         val done = taskRepository.addTask(Task(listId = workId, title = "done"))
         taskRepository.setTaskCompleted(done, true)
         listId = TaskList.ALL_TASKS_ID
@@ -224,17 +234,18 @@ class TaskListViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.isAllTasks)
         assertFalse(state.isListMissing)
-        assertEquals(listOf("Inbox", "Work"), state.sections.map { it.list?.name })
-        assertEquals(listOf(listOf("i1"), listOf("w1", "w2")), state.sections.map { titles(it.tasks) })
+        // Tasks in no list come first, without a header.
+        assertEquals(listOf(null, "Inbox", "Work"), state.sections.map { it.list?.name })
+        assertEquals(listOf(listOf("loose"), listOf("i1"), listOf("w1", "w2")), state.sections.map { titles(it.tasks) })
         assertEquals(listOf("done"), titles(state.completedTasks))
     }
 
     @Test
-    fun allTasks_addsNewTasksToTheInbox_andCantDeleteTheView() = runTest {
+    fun allTasks_addsNewTasksToNoList_andCantDeleteTheView() = runTest {
         listId = TaskList.ALL_TASKS_ID
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
         viewModel.addTask("new")
-        assertEquals(TaskList.INBOX_ID, taskRepository.tasks.value.single().listId)
+        assertEquals(null, taskRepository.tasks.value.single().listId)
         viewModel.deleteList()
         assertEquals(1, listRepository.lists.value.size)
     }
@@ -243,7 +254,7 @@ class TaskListViewModelTest {
     fun reorderLists_changesTheDrawerOrder() = runWithState {
         val workId = listRepository.addList("Work", 0)
         val homeId = listRepository.addList("Home", 0)
-        viewModel.reorderLists(listOf(homeId, TaskList.INBOX_ID, workId))
+        viewModel.reorderLists(listOf(homeId, INBOX_ID, workId))
         assertEquals(listOf("Home", "Inbox", "Work"), viewModel.uiState.value.lists.map { it.name })
     }
 

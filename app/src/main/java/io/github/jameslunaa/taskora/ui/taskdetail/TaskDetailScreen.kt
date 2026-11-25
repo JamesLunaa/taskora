@@ -1,6 +1,5 @@
 package io.github.jameslunaa.taskora.ui.taskdetail
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -81,7 +79,7 @@ import io.github.jameslunaa.taskora.ui.common.labelRes
 import io.github.jameslunaa.taskora.ui.common.recurrenceText
 import io.github.jameslunaa.taskora.ui.common.timeText
 import io.github.jameslunaa.taskora.ui.theme.TaskoraTheme
-import io.github.jameslunaa.taskora.ui.theme.listColor
+import io.github.jameslunaa.taskora.ui.lists.ListDot
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -127,7 +125,7 @@ class TaskDetailActions(
     val onReminderChange: (Instant?) -> Unit = {},
     val onRecurrenceChange: (Recurrence?) -> Unit = {},
     val onPriorityChange: (Priority) -> Unit = {},
-    val onListChange: (Long) -> Unit = {},
+    val onListChange: (Long?) -> Unit = {},
     val onAddSubtask: (String) -> Unit = {},
     val onSubtaskCompletedChange: (Subtask, Boolean) -> Unit = { _, _ -> },
     val onRenameSubtask: (Subtask, String) -> Unit = { _, _ -> },
@@ -239,30 +237,23 @@ private fun TitleRow(task: Task, actions: TaskDetailActions) {
 }
 
 @Composable
-private fun ListSection(listId: Long, lists: List<TaskList>, onListChange: (Long) -> Unit) {
-    val current = lists.find { it.id == listId } ?: return
+private fun ListSection(listId: Long?, lists: List<TaskList>, onListChange: (Long?) -> Unit) {
+    val current = lists.find { it.id == listId }
     var expanded by remember { mutableStateOf(false) }
     Box {
         ListItem(
             modifier = Modifier.clickable { expanded = true },
-            leadingContent = {
-                Box(
-                    Modifier
-                        .padding(4.dp)
-                        .size(16.dp)
-                        .background(listColor(current.color), CircleShape),
-                )
-            },
+            leadingContent = { ListDot(current?.color, Modifier.padding(4.dp).size(16.dp)) },
             overlineContent = { Text(stringResource(R.string.list)) },
-            headlineContent = { Text(current.name) },
+            headlineContent = { Text(current?.name ?: stringResource(R.string.no_list)) },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            lists.forEach { list ->
+            (listOf(null) + lists).forEach { list ->
                 DropdownMenuItem(
-                    text = { Text(list.name) },
+                    text = { Text(list?.name ?: stringResource(R.string.no_list)) },
                     onClick = {
                         expanded = false
-                        onListChange(list.id)
+                        onListChange(list?.id)
                     },
                 )
             }

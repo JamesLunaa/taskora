@@ -32,7 +32,10 @@ import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 
-/** A run of active tasks. [list] is the header to show above them; null for a single plain list. */
+/**
+ * A run of active tasks. [list] is the header to show above them; null for no header: a single
+ * list's tasks, or the tasks in no list at the top of All tasks.
+ */
 data class TaskSection(val list: TaskList?, val tasks: List<Task>)
 
 data class TaskListUiState(
@@ -41,11 +44,14 @@ data class TaskListUiState(
     val list: TaskList? = null,
     /** All lists, for the drawer. */
     val lists: List<TaskList> = emptyList(),
-    /** Active tasks, each section sorted by its list's sort mode. All tasks has one section per list. */
+    /**
+     * Active tasks, each section sorted by its list's sort mode. All tasks starts with the tasks in no
+     * list (oldest first), then has one section per list.
+     */
     val sections: List<TaskSection> = emptyList(),
     /** Most recently completed first. */
     val completedTasks: List<Task> = emptyList(),
-    /** The list no longer exists (e.g. it was just deleted); the screen should go to the Inbox. */
+    /** The list no longer exists (e.g. it was just deleted); the screen should go to All tasks. */
     val isListMissing: Boolean = false,
     /** The virtual "All tasks" view: every list's tasks, grouped by list. */
     val isAllTasks: Boolean = false,
@@ -72,7 +78,7 @@ class TaskListViewModel @Inject constructor(
     private val clock: Clock,
 ) : ViewModel() {
     // Key matches the TaskListRoute property name.
-    private val listId: Long = savedStateHandle.get<Long>("listId") ?: TaskList.INBOX_ID
+    private val listId: Long = savedStateHandle.get<Long>("listId") ?: TaskList.ALL_TASKS_ID
     private val isAllTasks = listId == TaskList.ALL_TASKS_ID
 
     private val _events = Channel<TaskListEvent>(Channel.BUFFERED)
@@ -91,10 +97,11 @@ class TaskListViewModel @Inject constructor(
         val tasks = if (dayFilter == DayFilter.ALL) allTasks else allTasks.filter { it.matchesDay(dayFilter, today) }
         val (completed, active) = tasks.partition { it.isCompleted }
         val sections = if (isAllTasks) {
-            lists.mapNotNull { l ->
-                active.filter { it.listId == l.id }.takeIf { it.isNotEmpty() }
-                    ?.let { TaskSection(l, it.sortedFor(l.sortMode, l.sortDescending)) }
-            }
+            val byList = active.groupBy { it.listId }
+            listOfNotNull(byList[null]?.let { TaskSection(null, it.sortedFor(TaskSortMode.CREATED)) }) +
+                lists.mapNotNull { l ->
+                    byList[l.id]?.let { TaskSection(l, it.sortedFor(l.sortMode, l.sortDescending)) }
+                }
         } else if (active.isEmpty()) {
             emptyList()
         } else {
@@ -120,8 +127,8 @@ class TaskListViewModel @Inject constructor(
 
     fun addTask(title: String) {
         if (title.isBlank()) return
-        // All tasks has no list of its own, so new tasks go to the Inbox.
-        val target = if (isAllTasks) TaskList.INBOX_ID else listId
+        // Tasks added in All tasks are in no list.
+        val target = if (isAllTasks) null else listId
         // Under a day filter the new task is due that day, so it doesn't vanish once added.
         val today = LocalDate.now(clock)
         val dueDate = when (uiState.value.dayFilter) {
@@ -147,6 +154,7 @@ class TaskListViewModel @Inject constructor(
     fun clearCompleted() {
         viewModelScope.launch {
             if (isAllTasks) {
+                taskRepository.clearCompleted(null)
                 uiState.value.lists.forEach { taskRepository.clearCompleted(it.id) }
             } else {
                 taskRepository.clearCompleted(listId)
@@ -168,7 +176,8 @@ class TaskListViewModel @Inject constructor(
         viewModelScope.launch { taskRepository.setTasksCompleted(ids, completed) }
     }
 
-    fun moveTasks(ids: Collection<Long>, targetListId: Long) {
+    /** A null [targetListId] takes the tasks out of their lists. */
+    fun moveTasks(ids: Collection<Long>, targetListId: Long?) {
         viewModelScope.launch { taskRepository.moveTasks(ids, targetListId) }
     }
 
@@ -222,7 +231,7 @@ class TaskListViewModel @Inject constructor(
 
     /** Deletes the current list and its tasks; [TaskListUiState.isListMissing] then flips to true. */
     fun deleteList() {
-        if (listId == TaskList.INBOX_ID || isAllTasks) return
+        if (isAllTasks) return
         viewModelScope.launch { taskListRepository.deleteList(listId) }
     }
 }
