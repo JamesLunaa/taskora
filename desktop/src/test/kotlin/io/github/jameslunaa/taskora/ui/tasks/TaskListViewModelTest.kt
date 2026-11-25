@@ -24,6 +24,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlinx.coroutines.flow.toList
 
 class TaskListViewModelTest {
     @get:Rule
@@ -279,6 +280,22 @@ class TaskListViewModelTest {
         viewModel.setListShown(INBOX_ID, false)
         viewModel.showAllLists()
         assertEquals(listOf("loose", "new", "i1"), titles(viewModel.uiState.value.activeTasks))
+    }
+
+    @Test
+    fun allTasksCount_includesTasksInNoList_andAddedTasksAreAnnounced() = runTest {
+        taskRepository.addTask(Task(listId = INBOX_ID, title = "i1"))
+        val done = taskRepository.addTask(Task(listId = INBOX_ID, title = "done"))
+        taskRepository.setTaskCompleted(done, true)
+        listId = TaskList.ALL_TASKS_ID
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+        val added = mutableListOf<Long>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.addedTaskIds.toList(added) }
+
+        viewModel.addTask("loose")
+        val loose = taskRepository.tasks.value.single { it.title == "loose" }
+        assertEquals(listOf(loose.id), added)
+        assertEquals(2, viewModel.uiState.value.allTasksCount)
     }
 
     @Test

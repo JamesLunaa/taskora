@@ -95,6 +95,7 @@ import io.github.jameslunaa.taskora.ui.lists.ListEditorDialog
 import io.github.jameslunaa.taskora.ui.lists.SortMenu
 import io.github.jameslunaa.taskora.ui.taskdetail.DueDatePickerDialog
 import io.github.jameslunaa.taskora.ui.theme.listColor
+import kotlinx.coroutines.flow.Flow
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
@@ -109,6 +110,8 @@ fun TaskListPane(
     uiState: TaskListUiState,
     selectedTaskId: Long?,
     addFieldFocus: FocusRequester,
+    /** Tasks just added; each one is scrolled into view. */
+    addedTaskIds: Flow<Long>,
     onAddTask: (String) -> Unit,
     onOpenTask: (Long) -> Unit,
     onCheckedChange: (Task, Boolean) -> Unit,
@@ -137,6 +140,7 @@ fun TaskListPane(
 
     // While dragging, the order lives here; it's saved when the drag ends.
     val lazyListState = rememberLazyListState()
+    ScrollToAddedTask(lazyListState, uiState.sections, addedTaskIds)
     // A filtered list shows only some tasks, so a drag couldn't place them among the hidden ones.
     val canDrag = list != null && !uiState.isAllTasks && !uiState.isSelecting && uiState.dayFilter == DayFilter.ALL
     var moved by remember { mutableStateOf(false) }

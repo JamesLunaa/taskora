@@ -60,6 +60,14 @@ class TaskoraDatabaseTest {
     }
 
     @Test
+    fun activeCount_includesTasksInNoList() = runBlocking {
+        insertTask(INBOX_ID, "a")
+        insertTask(null, "loose")
+        insertTask(null, "done", completed = true)
+        assertEquals(2, db.taskDao().observeActiveCount().first())
+    }
+
+    @Test
     fun activeTaskCount_ignoresCompleted() = runBlocking {
         insertTask(INBOX_ID, "a")
         insertTask(INBOX_ID, "b")

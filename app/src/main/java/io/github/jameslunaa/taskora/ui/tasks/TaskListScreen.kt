@@ -96,6 +96,8 @@ import io.github.jameslunaa.taskora.ui.lists.SortDialog
 import io.github.jameslunaa.taskora.ui.taskdetail.DueDatePickerDialog
 import io.github.jameslunaa.taskora.ui.theme.TaskoraTheme
 import io.github.jameslunaa.taskora.ui.theme.listColor
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -150,6 +152,7 @@ fun TaskListScreen(
             onReorder = viewModel::reorder,
             onReorderLists = viewModel::reorderLists,
         ),
+        addedTaskIds = viewModel.addedTaskIds,
     )
 }
 
@@ -195,6 +198,8 @@ private enum class TaskListDialog { NONE, CLEAR_COMPLETED, NEW_LIST, EDIT_LIST, 
 fun TaskListContent(
     uiState: TaskListUiState,
     actions: TaskListActions,
+    /** Tasks just added; each one is scrolled into view. */
+    addedTaskIds: Flow<Long> = emptyFlow(),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -227,6 +232,7 @@ fun TaskListContent(
 
     // Drag order is kept locally while a drag is in progress and saved when the finger lifts.
     val lazyListState = rememberLazyListState()
+    ScrollToAddedTask(lazyListState, uiState.sections, addedTaskIds)
     // A filtered list shows only some tasks, so a drag couldn't place them among the hidden ones.
     val canDrag = !uiState.isAllTasks && !selecting && uiState.list != null && uiState.dayFilter == DayFilter.ALL
     // A long press that never moves is a plain long press, so it opens the actions sheet on release.
@@ -279,6 +285,7 @@ fun TaskListContent(
         drawerContent = {
             ListsDrawer(
                 lists = uiState.lists,
+                allTasksCount = uiState.allTasksCount,
                 selectedListId = if (uiState.isAllTasks) TaskList.ALL_TASKS_ID else uiState.list?.id,
                 onListClick = { list ->
                     scope.launch { drawerState.close() }

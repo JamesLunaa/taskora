@@ -22,6 +22,9 @@ interface TaskRepository {
     /** Every task in every list, unordered. */
     fun observeAllTasks(): Flow<List<Task>>
     fun observeTask(id: Long): Flow<Task?>
+
+    /** Open tasks in every list and in no list: the All tasks count. */
+    fun observeActiveTaskCount(): Flow<Int>
     suspend fun getTask(id: Long): Task?
 
     /** Inserts [task] (its subtasks are ignored) at the end of its list. */
@@ -84,6 +87,8 @@ class OfflineTaskRepository(
 
     override fun observeAllTasks(): Flow<List<Task>> =
         taskDao.observeAll().map { tasks -> tasks.map { it.toDomain() } }
+
+    override fun observeActiveTaskCount(): Flow<Int> = taskDao.observeActiveCount()
 
     override fun observeTask(id: Long): Flow<Task?> =
         taskDao.observeById(id).map { it?.toDomain() }

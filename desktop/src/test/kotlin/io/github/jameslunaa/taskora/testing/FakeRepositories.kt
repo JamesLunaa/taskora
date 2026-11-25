@@ -74,6 +74,8 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
 
     override fun observeAllTasks(): Flow<List<Task>> = tasks
 
+    override fun observeActiveTaskCount(): Flow<Int> = tasks.map { all -> all.count { !it.isCompleted } }
+
     override fun observeTask(id: Long): Flow<Task?> = tasks.map { all -> all.find { it.id == id } }
 
     override suspend fun getTask(id: Long): Task? = tasks.value.find { it.id == id }

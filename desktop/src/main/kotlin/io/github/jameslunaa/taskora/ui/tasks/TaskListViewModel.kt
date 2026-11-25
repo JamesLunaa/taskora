@@ -41,6 +41,8 @@ data class TaskListUiState(
     val list: TaskList? = null,
     /** All lists, for the drawer. */
     val lists: List<TaskList> = emptyList(),
+    /** Open tasks everywhere, those in no list included: the All tasks count in the drawer. */
+    val allTasksCount: Int = 0,
     /**
      * Active tasks, each section sorted by its list's sort mode. All tasks starts with the tasks in no
      * list (oldest first), then has one section per list.
@@ -87,16 +89,21 @@ class TaskListViewModel(
     private val _events = Channel<TaskListEvent>(Channel.BUFFERED)
     val events: Flow<TaskListEvent> = _events.receiveAsFlow()
 
+    private val _addedTaskIds = Channel<Long>(Channel.BUFFERED)
+
+    /** Each task added here, once it's saved, so the screen can bring it into view. */
+    val addedTaskIds: Flow<Long> = _addedTaskIds.receiveAsFlow()
+
     private val selection = MutableStateFlow<Set<Long>>(emptySet())
     private val hiddenListIds = MutableStateFlow<Set<Long?>>(emptySet())
 
     val uiState: StateFlow<TaskListUiState> = combine(
         if (isAllTasks) flowOf(null) else taskListRepository.observeList(listId),
-        taskListRepository.observeLists(),
+        combine(taskListRepository.observeLists(), taskRepository.observeActiveTaskCount(), ::Pair),
         if (isAllTasks) taskRepository.observeAllTasks() else taskRepository.observeTasks(listId),
         combine(selection, hiddenListIds, ::Pair),
         settingsRepository?.settings?.map { it.dayFilter }?.distinctUntilChanged() ?: flowOf(DayFilter.ALL),
-    ) { list, lists, allTasks, (selected, hidden), dayFilter ->
+    ) { list, (lists, allTasksCount), allTasks, (selected, hidden), dayFilter ->
         val today = LocalDate.now(clock)
         val tasks = allTasks.filter {
             (dayFilter == DayFilter.ALL || it.matchesDay(dayFilter, today)) && it.listId !in hidden
@@ -117,6 +124,7 @@ class TaskListViewModel(
             isLoading = false,
             list = list,
             lists = lists,
+            allTasksCount = allTasksCount,
             sections = sections,
             completedTasks = completed.sortedByDescending { it.completedAt },
             isListMissing = !isAllTasks && list == null,
@@ -154,7 +162,9 @@ class TaskListViewModel(
             DayFilter.TODAY -> today
             DayFilter.TOMORROW -> today.plusDays(1)
         }
-        viewModelScope.launch { taskRepository.addTask(Task(listId = target, title = title, dueDate = dueDate)) }
+        viewModelScope.launch {
+            _addedTaskIds.send(taskRepository.addTask(Task(listId = target, title = title, dueDate = dueDate)))
+        }
     }
 
     fun setCompleted(task: Task, completed: Boolean) {

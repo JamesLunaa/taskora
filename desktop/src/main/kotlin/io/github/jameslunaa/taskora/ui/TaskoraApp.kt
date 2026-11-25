@@ -179,6 +179,7 @@ fun TaskoraApp(
         Row(Modifier.fillMaxSize()) {
             Sidebar(
                 lists = listState.lists,
+                allTasksCount = listState.allTasksCount,
                 selectedListId = listId.takeUnless { searching || browsedDevice != null },
                 searching = searching && browsedDevice == null,
                 onSelect = {
@@ -228,6 +229,7 @@ fun TaskoraApp(
                         uiState = listState,
                         selectedTaskId = taskId,
                         addFieldFocus = shortcuts.addFieldFocus,
+                        addedTaskIds = listViewModel.addedTaskIds,
                         onAddTask = listViewModel::addTask,
                         onOpenTask = { taskId = it },
                         onCheckedChange = listViewModel::setCompleted,

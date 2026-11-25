@@ -60,6 +60,8 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @Composable
 fun Sidebar(
     lists: List<TaskList>,
+    /** Open tasks everywhere, those in no list included. */
+    allTasksCount: Int,
     /** Null while searching. */
     selectedListId: Long?,
     searching: Boolean,
@@ -100,7 +102,7 @@ fun Sidebar(
         NavigationDrawerItem(
             label = { Text(stringResource(Res.string.all_tasks)) },
             icon = { Icon(Icons.AutoMirrored.Outlined.List, contentDescription = null) },
-            badge = { CountBadge(lists.sumOf { it.activeTaskCount }) },
+            badge = { CountBadge(allTasksCount) },
             selected = selectedListId == TaskList.ALL_TASKS_ID,
             onClick = { onSelect(TaskList.ALL_TASKS_ID) },
             colors = itemColors,

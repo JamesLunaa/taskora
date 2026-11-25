@@ -26,6 +26,10 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id")
     fun observeById(id: Long): Flow<TaskWithSubtasks?>
 
+    /** Every open task, those in no list included. */
+    @Query("SELECT COUNT(*) FROM tasks WHERE isCompleted = 0")
+    fun observeActiveCount(): Flow<Int>
+
     @Transaction
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun getById(id: Long): TaskWithSubtasks?
