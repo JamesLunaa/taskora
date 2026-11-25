@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -19,13 +20,18 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.pressKey
 import io.github.jameslunaa.taskora.AppContainer
 import io.github.jameslunaa.taskora.data.local.TaskoraDatabase
+import io.github.jameslunaa.taskora.data.local.entity.toEntity
+import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.testing.FakeAutostart
 import io.github.jameslunaa.taskora.testing.FakeNotifier
 import io.github.jameslunaa.taskora.testing.FakeSettingsRepository
+import io.github.jameslunaa.taskora.testing.INBOX_ID
 import io.github.jameslunaa.taskora.ui.theme.TaskoraTheme
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
+import io.github.jameslunaa.taskora.testing.inMemoryDatabaseWithInbox
+import kotlinx.coroutines.runBlocking
 
 /** Drives the whole window against an in-memory database. */
 @OptIn(ExperimentalTestApi::class)
@@ -33,7 +39,7 @@ class TaskoraAppTest {
     @get:Rule
     val rule = createComposeRule()
 
-    private val database = TaskoraDatabase.create(file = null, inboxName = "Inbox")
+    private val database = inMemoryDatabaseWithInbox()
 
     @After
     fun tearDown() = database.close()
@@ -132,6 +138,22 @@ class TaskoraAppTest {
 
         // Shown in both the sidebar and the header band.
         rule.waitUntil(5_000) { rule.onAllNodes(hasText("Groceries")).fetchSemanticsNodes().size == 2 }
+    }
+
+    @Test
+    fun listFilter_hidesAListInAllTasks() {
+        runBlocking { database.taskDao().insert(Task(listId = INBOX_ID, title = "Inbox task").toEntity()) }
+        rule.setContent { TaskoraTheme { TaskoraApp(container(), AppShortcuts()) } }
+        addTask("Loose task")
+        waitFor("Inbox task")
+
+        rule.onNode(hasText("Lists") and isSelectable()).performClick()
+        rule.onNode(hasText("Inbox") and isToggleable()).performClick()
+        waitForNo("Inbox task")
+        rule.onNodeWithText("Loose task").assertExists()
+
+        rule.onNodeWithText("Show all lists").performClick()
+        waitFor("Inbox task")
     }
 
     private fun addTask(title: String) {

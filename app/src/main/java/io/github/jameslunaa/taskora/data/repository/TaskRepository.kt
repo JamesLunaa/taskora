@@ -24,6 +24,9 @@ interface TaskRepository {
     /** Every task in every list, unordered. */
     fun observeAllTasks(): Flow<List<Task>>
     fun observeTask(id: Long): Flow<Task?>
+
+    /** Open tasks in every list and in no list: the All tasks count. */
+    fun observeActiveTaskCount(): Flow<Int>
     suspend fun getTask(id: Long): Task?
 
     /** Inserts [task] (its subtasks are ignored) at the end of its list. */
@@ -46,7 +49,8 @@ interface TaskRepository {
 
     /** Puts back a deleted [task] exactly as it was, subtasks included. */
     suspend fun restoreTask(task: Task)
-    suspend fun clearCompleted(listId: Long)
+    /** A null [listId] clears the completed tasks that are in no list. */
+    suspend fun clearCompleted(listId: Long?)
 
     /** Applies [transform] to each task in [ids] through [updateTask]; unknown ids are skipped. */
     suspend fun updateTasks(ids: Collection<Long>, transform: (Task) -> Task)
@@ -56,8 +60,8 @@ interface TaskRepository {
     suspend fun deleteTasks(ids: Collection<Long>): List<Task>
     suspend fun restoreTasks(tasks: List<Task>)
 
-    /** Moves the tasks to the end of [listId], keeping their relative order. */
-    suspend fun moveTasks(ids: Collection<Long>, listId: Long)
+    /** Moves the tasks to the end of [listId] (null for no list), keeping their relative order. */
+    suspend fun moveTasks(ids: Collection<Long>, listId: Long?)
 
     /** Stores [orderedIds] as the manual order (the first id gets position 0). */
     suspend fun reorderTasks(orderedIds: List<Long>)
@@ -66,6 +70,9 @@ interface TaskRepository {
     suspend fun updateSubtask(subtask: Subtask)
     suspend fun setSubtaskCompleted(id: Long, completed: Boolean)
     suspend fun deleteSubtask(id: Long)
+
+    /** Stores [orderedIds] as the order of a task's subtasks (the first id gets position 0). */
+    suspend fun reorderSubtasks(orderedIds: List<Long>)
 }
 
 @Singleton
@@ -80,6 +87,8 @@ class OfflineTaskRepository @Inject constructor(
 
     override fun observeAllTasks(): Flow<List<Task>> =
         taskDao.observeAll().map { tasks -> tasks.map { it.toDomain() } }
+
+    override fun observeActiveTaskCount(): Flow<Int> = taskDao.observeActiveCount()
 
     override fun observeTask(id: Long): Flow<Task?> =
         taskDao.observeById(id).map { it?.toDomain() }
@@ -152,7 +161,7 @@ class OfflineTaskRepository @Inject constructor(
         syncReminder(task)
     }
 
-    override suspend fun clearCompleted(listId: Long) = taskDao.deleteCompleted(listId)
+    override suspend fun clearCompleted(listId: Long?) = taskDao.deleteCompleted(listId)
 
     override suspend fun updateTasks(ids: Collection<Long>, transform: (Task) -> Task) {
         ids.forEach { id -> getTask(id)?.let { updateTask(transform(it)) } }
@@ -167,7 +176,7 @@ class OfflineTaskRepository @Inject constructor(
 
     override suspend fun restoreTasks(tasks: List<Task>) = tasks.forEach { restoreTask(it) }
 
-    override suspend fun moveTasks(ids: Collection<Long>, listId: Long) {
+    override suspend fun moveTasks(ids: Collection<Long>, listId: Long?) {
         ids.mapNotNull { getTask(it) }
             .sortedWith(compareBy({ it.listId }, { it.sortOrder }, { it.id }))
             .forEach { updateTask(it.copy(listId = listId, sortOrder = taskDao.nextSortOrder(listId))) }
@@ -186,6 +195,8 @@ class OfflineTaskRepository @Inject constructor(
     override suspend fun setSubtaskCompleted(id: Long, completed: Boolean) = subtaskDao.setCompleted(id, completed)
 
     override suspend fun deleteSubtask(id: Long) = subtaskDao.deleteById(id)
+
+    override suspend fun reorderSubtasks(orderedIds: List<Long>) = subtaskDao.setSortOrders(orderedIds)
 
     private fun syncReminder(task: Task) {
         val at = task.pendingReminder(Instant.now(clock))

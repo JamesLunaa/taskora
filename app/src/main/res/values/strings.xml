@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Taskora</string>
-    <string name="inbox">Inbox</string>
 
     <!-- Common -->
     <string name="back">Back</string>
@@ -51,6 +50,9 @@
         <item quantity="other">Delete \u201c%1$s\u201d and its %2$d tasks?</item>
     </plurals>
     <string name="list">List</string>
+    <string name="lists">Lists</string>
+    <string name="show_all_lists">Show all lists</string>
+    <string name="no_list">No list</string>
 
     <!-- Sorting -->
     <string name="sort_by">Sort by</string>
@@ -194,6 +196,7 @@
     <string name="add_subtask_hint">Add subtask</string>
     <string name="edit_subtask">Edit subtask</string>
     <string name="delete_subtask">Delete subtask</string>
+    <string name="drag_to_reorder">Drag to reorder</string>
     <string name="delete_task">Delete task</string>
     <string name="delete_task_confirm">Delete this task and its subtasks?</string>
 </resources>

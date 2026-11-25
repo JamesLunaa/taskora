@@ -18,6 +18,8 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import io.github.jameslunaa.taskora.testing.inMemoryDatabaseWithInbox
+import io.github.jameslunaa.taskora.testing.INBOX_ID
 
 class OfflineTaskRepositoryTest {
     private class FakeScheduler : ReminderScheduler {
@@ -39,7 +41,7 @@ class OfflineTaskRepositoryTest {
 
     @Before
     fun setUp() {
-        db = TaskoraDatabase.create(file = null, inboxName = "Inbox")
+        db = inMemoryDatabaseWithInbox()
         scheduler = FakeScheduler()
         repository = OfflineTaskRepository(db.taskDao(), db.subtaskDao(), scheduler, Clock.fixed(now, ZoneOffset.UTC))
     }
@@ -47,12 +49,12 @@ class OfflineTaskRepositoryTest {
     @After
     fun tearDown() = db.close()
 
-    private suspend fun tasks() = repository.observeTasks(TaskList.INBOX_ID).first()
+    private suspend fun tasks() = repository.observeTasks(INBOX_ID).first()
 
     @Test
     fun completingRecurringTask_createsNextOccurrenceOnce() = runBlocking {
         val id = repository.addTask(
-            Task(listId = TaskList.INBOX_ID, title = "Water", dueDate = today, recurrence = Recurrence(Frequency.DAILY)),
+            Task(listId = INBOX_ID, title = "Water", dueDate = today, recurrence = Recurrence(Frequency.DAILY)),
         )
         repository.addSubtask(id, "Balcony")
 
@@ -70,7 +72,7 @@ class OfflineTaskRepositoryTest {
     @Test
     fun completingViaUpdate_alsoCreatesNextOccurrence() = runBlocking {
         val id = repository.addTask(
-            Task(listId = TaskList.INBOX_ID, title = "Water", dueDate = today, recurrence = Recurrence(Frequency.WEEKLY)),
+            Task(listId = INBOX_ID, title = "Water", dueDate = today, recurrence = Recurrence(Frequency.WEEKLY)),
         )
         val task = repository.getTask(id)!!
         repository.updateTask(task.copy(isCompleted = true, completedAt = now))
@@ -80,7 +82,7 @@ class OfflineTaskRepositoryTest {
     @Test
     fun reminders_followCompletionAndDeletion() = runBlocking {
         val at = now.plusSeconds(3600)
-        val id = repository.addTask(Task(listId = TaskList.INBOX_ID, title = "Call", reminderAt = at))
+        val id = repository.addTask(Task(listId = INBOX_ID, title = "Call", reminderAt = at))
         assertEquals(at, scheduler.scheduled[id])
 
         repository.setTaskCompleted(id, true)

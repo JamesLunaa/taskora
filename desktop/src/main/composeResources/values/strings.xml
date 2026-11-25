@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Taskora</string>
-    <string name="inbox">Inbox</string>
 
     <!-- Common -->
     <string name="cancel">Cancel</string>
@@ -43,6 +42,7 @@
 
     <!-- Lists -->
     <string name="lists">Lists</string>
+    <string name="show_all_lists">Show all lists</string>
     <string name="new_list">New list</string>
     <string name="edit_list">Edit list</string>
     <string name="delete_list">Delete list</string>
@@ -55,6 +55,7 @@
         <item quantity="other">Delete “%1$s” and its %2$d tasks?</item>
     </plurals>
     <string name="list">List</string>
+    <string name="no_list">No list</string>
     <string name="all_tasks">All tasks</string>
 
     <!-- Task detail -->
@@ -228,7 +229,7 @@
     <string name="unpair_title">Unpair %1$s?</string>
     <string name="unpair_body">The two devices won’t see each other’s tasks any more. Tasks already copied stay where they are.</string>
     <string name="copy_to_this_computer">Copy to this computer</string>
-    <string name="copied_here">Copied “%1$s” to this computer’s Inbox</string>
+    <string name="copied_here">Copied “%1$s” to this computer</string>
     <string name="device_action_failed">Couldn’t reach the device. Try again when it’s online.</string>
     <string name="device_no_tasks">No open tasks here</string>
     <string name="send_to_device">Send to device</string>

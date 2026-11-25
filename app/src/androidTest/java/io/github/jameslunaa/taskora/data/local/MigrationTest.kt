@@ -41,4 +41,27 @@ class MigrationTest {
             }
         }
     }
+
+    @Test
+    fun migrate3To4_makesListIdNullableAndKeepsSubtasks() {
+        helper.createDatabase(dbName, 3).use { db ->
+            db.execSQL("INSERT INTO task_lists (id, name, color, sortOrder) VALUES (1, 'Inbox', 0, 0)")
+            db.execSQL(
+                "INSERT INTO tasks (id, listId, title, notes, priority, isCompleted, createdAt, sortOrder) " +
+                    "VALUES (1, 1, 'a', '', 0, 0, 0, 0)",
+            )
+            db.execSQL("INSERT INTO subtasks (id, taskId, title, isCompleted, sortOrder) VALUES (1, 1, 's', 0, 0)")
+        }
+        // The tasks table is rebuilt; its subtasks must not cascade away with the old one.
+        helper.runMigrationsAndValidate(dbName, 4, true).use { db ->
+            db.query("SELECT COUNT(*) FROM subtasks").use { cursor ->
+                cursor.moveToFirst()
+                assertEquals(1, cursor.getInt(0))
+            }
+            db.execSQL(
+                "INSERT INTO tasks (id, listId, title, notes, priority, isCompleted, createdAt, sortOrder) " +
+                    "VALUES (2, NULL, 'b', '', 0, 0, 0, 0)",
+            )
+        }
+    }
 }

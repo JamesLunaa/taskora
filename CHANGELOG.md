@@ -7,6 +7,19 @@ The Android app's releases are `[x.y.z]` (tag `vx.y.z`); the desktop app has its
 
 ## [Unreleased]
 
+### Added
+
+- **Tasks without a list**: tasks you add in All tasks no longer go to the Inbox. They stay in no list and show at the top of All tasks. Move to list and a task's list picker offer "No list".
+- **Reorder subtasks**: drag a subtask by its handle on the task's detail screen. On desktop the handle appears on hover.
+- **Filter lists in All tasks**: the Lists chip next to Today and Tomorrow hides or shows each list's tasks, "No list" included. The filter is temporary: it resets when you leave All tasks or close the app. Clear completed there only clears the lists you can see.
+
+### Changed
+
+- The app opens on **All tasks**.
+- The **Inbox** is now an ordinary list: rename it or delete it like any other. New installs start without one.
+- Desktop: tasks copied from or sent by another device land in no list instead of the Inbox.
+- A task you add scrolls into view when it lands outside the visible rows.
+
 ## [1.3.0] - 2026-11-24
 
 ### Added

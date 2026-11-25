@@ -1,5 +1,7 @@
 package io.github.jameslunaa.taskora.testing
 
+import io.github.jameslunaa.taskora.data.local.TaskoraDatabase
+import io.github.jameslunaa.taskora.data.local.entity.TaskListEntity
 import io.github.jameslunaa.taskora.data.repository.TaskListRepository
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
 import io.github.jameslunaa.taskora.data.settings.SettingsRepository
@@ -21,12 +23,23 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
+/** Id of the "Inbox" list that [FakeTaskListRepository] and [inMemoryDatabaseWithInbox] start with. */
+const val INBOX_ID = 1L
+
+/** An in-memory database holding one empty list, "Inbox" ([INBOX_ID]). */
+fun inMemoryDatabaseWithInbox(): TaskoraDatabase = TaskoraDatabase.create(file = null).also { db ->
+    runBlocking {
+        db.taskListDao().insert(TaskListEntity(id = INBOX_ID, name = "Inbox", color = TaskList.DEFAULT_COLOR, sortOrder = 0))
+    }
+}
+
 class FakeTaskListRepository(
-    initial: List<TaskList> = listOf(TaskList(id = TaskList.INBOX_ID, name = "Inbox", color = TaskList.DEFAULT_COLOR)),
+    initial: List<TaskList> = listOf(TaskList(id = INBOX_ID, name = "Inbox", color = TaskList.DEFAULT_COLOR)),
 ) : TaskListRepository {
     val lists = MutableStateFlow(initial)
     private var nextId = (initial.maxOfOrNull { it.id } ?: 0) + 1
@@ -60,6 +73,8 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
         tasks.map { all -> all.filter { it.listId == listId }.sortedBy { it.sortOrder } }
 
     override fun observeAllTasks(): Flow<List<Task>> = tasks
+
+    override fun observeActiveTaskCount(): Flow<Int> = tasks.map { all -> all.count { !it.isCompleted } }
 
     override fun observeTask(id: Long): Flow<Task?> = tasks.map { all -> all.find { it.id == id } }
 
@@ -103,7 +118,7 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
 
     override suspend fun restoreTask(task: Task) = tasks.update { it + task }
 
-    override suspend fun clearCompleted(listId: Long) =
+    override suspend fun clearCompleted(listId: Long?) =
         tasks.update { all -> all.filterNot { it.listId == listId && it.isCompleted } }
 
     override suspend fun updateTasks(ids: Collection<Long>, transform: (Task) -> Task) =
@@ -124,7 +139,7 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
 
     override suspend fun restoreTasks(tasks: List<Task>) = this.tasks.update { it + tasks }
 
-    override suspend fun moveTasks(ids: Collection<Long>, listId: Long) {
+    override suspend fun moveTasks(ids: Collection<Long>, listId: Long?) {
         var next = tasks.value.count { it.listId == listId }
         tasks.update { all ->
             all.map { if (it.id in ids) it.copy(listId = listId, sortOrder = next++) else it }
@@ -149,6 +164,17 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
 
     override suspend fun deleteSubtask(id: Long) =
         tasks.update { all -> all.map { task -> task.copy(subtasks = task.subtasks.filterNot { it.id == id }) } }
+
+    override suspend fun reorderSubtasks(orderedIds: List<Long>) =
+        tasks.update { all ->
+            all.map { task ->
+                task.copy(
+                    subtasks = task.subtasks
+                        .map { sub -> orderedIds.indexOf(sub.id).let { if (it >= 0) sub.copy(sortOrder = it) else sub } }
+                        .sortedBy { it.sortOrder },
+                )
+            }
+        }
 
     private fun modify(id: Long, transform: (Task) -> Task) =
         tasks.update { all -> all.map { if (it.id == id) transform(it) else it } }

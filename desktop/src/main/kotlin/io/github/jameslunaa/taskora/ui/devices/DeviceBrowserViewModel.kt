@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.jameslunaa.taskora.data.repository.TaskRepository
 import io.github.jameslunaa.taskora.devices.toNewTask
-import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.lan.DeviceState
 import io.github.jameslunaa.taskora.lan.LanHost
 import io.github.jameslunaa.taskora.lan.RemoteDevice
@@ -25,7 +24,7 @@ data class DeviceBrowserState(
     val connection: DeviceState = DeviceState.CONNECTING,
     val lists: List<WireList> = emptyList(),
     /** [LanHost.ALL_LISTS] for all of them. */
-    val listId: Long = TaskList.INBOX_ID,
+    val listId: Long = LanHost.ALL_LISTS,
     val tasks: List<WireTask> = emptyList(),
     /** False until the first successful fetch. */
     val isLoaded: Boolean = false,
@@ -41,7 +40,7 @@ sealed interface DeviceBrowserEvent {
 /**
  * Browsing a paired device: its lists and open tasks, fetched again after every (re)connection
  * and every change there (docs/lan.md, "Connection loss"). Tasks can be ticked off there, or
- * copied to this computer's Inbox.
+ * copied to this computer (in no list).
  */
 class DeviceBrowserViewModel(
     private val remote: RemoteDevice,
@@ -81,7 +80,7 @@ class DeviceBrowserViewModel(
 
     fun copyHere(task: WireTask) {
         viewModelScope.launch {
-            taskRepository.addTaskWithSubtasks(task.toNewTask(TaskList.INBOX_ID, Instant.now(clock)))
+            taskRepository.addTaskWithSubtasks(task.toNewTask(null, Instant.now(clock)))
             _events.send(DeviceBrowserEvent.CopiedHere(task.title))
         }
     }
@@ -94,8 +93,8 @@ class DeviceBrowserViewModel(
             remote.call {
                 val lists = lists()
                 val wanted = _state.value.listId
-                // The list was deleted there: back to the Inbox.
-                val listId = if (wanted == LanHost.ALL_LISTS || lists.any { it.id == wanted }) wanted else TaskList.INBOX_ID
+                // The list was deleted there: back to all of them.
+                val listId = if (lists.any { it.id == wanted }) wanted else LanHost.ALL_LISTS
                 Triple(lists, listId, tasks(listId))
             }
         }.onSuccess { (lists, listId, tasks) ->

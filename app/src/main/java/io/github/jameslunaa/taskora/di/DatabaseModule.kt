@@ -2,7 +2,6 @@ package io.github.jameslunaa.taskora.di
 
 import android.content.Context
 import androidx.room.Room
-import io.github.jameslunaa.taskora.R
 import io.github.jameslunaa.taskora.data.local.TaskoraDatabase
 import io.github.jameslunaa.taskora.data.local.dao.SubtaskDao
 import io.github.jameslunaa.taskora.data.local.dao.TaskDao
@@ -22,7 +21,6 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): TaskoraDatabase =
         Room.databaseBuilder(context, TaskoraDatabase::class.java, TaskoraDatabase.NAME)
-            .addCallback(TaskoraDatabase.SeedCallback(context.getString(R.string.inbox)))
             .build()
 
     @Provides

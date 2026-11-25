@@ -162,6 +162,17 @@ class TaskDetailViewModelTest {
     }
 
     @Test
+    fun reorderSubtasks_savesTheNewOrder() = runTest {
+        val id = repository.addTask(Task(listId = 1, title = "t"))
+        val viewModel = viewModelFor(id)
+        listOf("A", "B", "C").forEach(viewModel::addSubtask)
+        val (a, b, c) = viewModel.uiState.value.task!!.subtasks.map { it.id }
+        viewModel.reorderSubtasks(listOf(c, a, b))
+        assertEquals(listOf("C", "A", "B"), viewModel.uiState.value.task!!.subtasks.map { it.title })
+        assertEquals(listOf("C", "A", "B"), stored(id).subtasks.map { it.title })
+    }
+
+    @Test
     fun deleteTask_removesItAndCloses() = runTest {
         val id = repository.addTask(Task(listId = 1, title = "t"))
         val viewModel = viewModelFor(id)

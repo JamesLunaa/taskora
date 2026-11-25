@@ -147,7 +147,7 @@ The examples show the request, then the response.
 { "type": "tasks", "id": 3, "tasks": [ <Task>, … ] }
 ```
 
-`listId` −1 means all lists. Tasks come in the list's own sort order.
+`listId` −1 means all lists, starting with the tasks in no list (`listId` null), oldest first, then each list's tasks in the lists' order. Tasks come in the list's own sort order.
 
 ### Tick a task off, or untick it
 
@@ -167,7 +167,7 @@ This behaves as on the device itself: completing a repeating task creates its ne
 
 `key` is a random UUID per copy. If the connection drops before the reply arrives, the sender retries with the same `key` after reconnecting. A receiver that has already added a task under that key (it remembers keys for an hour) replies with the same `taskId`, so a retry never creates a duplicate.
 
-`listId` null means the receiver's Inbox; a list that no longer exists also falls back to the Inbox. The receiver ignores `task.id`, `task.listId` and the subtask IDs, and creates a new task. Its reminder is scheduled there, unless it's already in the past.
+`listId` null puts the task in no list on the receiver (it shows at the top of All tasks); a list that no longer exists means no list too. Desktop 0.3.0 and earlier put such tasks in their Inbox instead. The receiver ignores `task.id`, `task.listId` and the subtask IDs, and creates a new task. Its reminder is scheduled there, unless it's already in the past.
 
 Copying a task from a browsed device to this one needs no request: the browsing device already has the task from `tasks` and adds it locally.
 
@@ -225,6 +225,7 @@ Times use ISO 8601. Optional fields may be missing or null.
 }
 ```
 
+- `listId`: null for a task in no list.
 - `priority`: `NONE`, `LOW`, `MEDIUM` or `HIGH`.
 - `frequency`: `DAILY`, `WEEKLY`, `MONTHLY` or `YEARLY`.
 - `daysOfWeek`: only for `WEEKLY`.

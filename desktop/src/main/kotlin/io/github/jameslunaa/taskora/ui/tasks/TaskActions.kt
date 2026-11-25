@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import io.github.jameslunaa.taskora.ui.icons.automirrored.outlined.DriveFileMove
 import io.github.jameslunaa.taskora.ui.icons.automirrored.outlined.OpenInNew
@@ -51,6 +49,7 @@ import io.github.jameslunaa.taskora.resources.delete
 import io.github.jameslunaa.taskora.resources.mark_complete
 import io.github.jameslunaa.taskora.resources.mark_incomplete
 import io.github.jameslunaa.taskora.resources.move_to_list
+import io.github.jameslunaa.taskora.resources.no_list
 import io.github.jameslunaa.taskora.resources.open_task
 import io.github.jameslunaa.taskora.resources.pick_date
 import io.github.jameslunaa.taskora.resources.remove_due_date
@@ -60,7 +59,7 @@ import io.github.jameslunaa.taskora.resources.today
 import io.github.jameslunaa.taskora.resources.tomorrow
 import io.github.jameslunaa.taskora.ui.common.color
 import io.github.jameslunaa.taskora.ui.common.label
-import io.github.jameslunaa.taskora.ui.theme.listColor
+import io.github.jameslunaa.taskora.ui.lists.ListDot
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import java.time.LocalDate
@@ -71,7 +70,8 @@ class TaskBulkActions(
     val onSelect: (Task) -> Unit,
     val onSetDueDate: (Collection<Long>, LocalDate?) -> Unit,
     val onSetPriority: (Collection<Long>, Priority) -> Unit,
-    val onMove: (Collection<Long>, Long) -> Unit,
+    /** A null list id takes the tasks out of their lists. */
+    val onMove: (Collection<Long>, Long?) -> Unit,
     val onSetCompleted: (Collection<Long>, Boolean) -> Unit,
     val onDelete: (List<Task>) -> Unit,
     /** Paired devices to send copies to (docs/lan.md); none hides "Send to device". */
@@ -152,16 +152,14 @@ fun TaskContextMenu(
                             onClick = { act { actions.onSetPriority(ids, priority) } },
                         )
                     }
-                    MenuPage.MOVE -> lists.forEach { list ->
+                    MenuPage.MOVE -> (listOf(null) + lists).forEach { list ->
                         DropdownMenuItem(
-                            text = { Text(list.name) },
+                            text = { Text(list?.name ?: stringResource(Res.string.no_list)) },
                             leadingIcon = {
-                                Box(Modifier.size(24.dp)) {
-                                    Box(Modifier.size(12.dp).background(listColor(list.color), CircleShape))
-                                }
+                                Box(Modifier.size(24.dp)) { ListDot(list?.color, Modifier.size(12.dp)) }
                             },
-                            enabled = tasks.any { it.listId != list.id },
-                            onClick = { act { actions.onMove(ids, list.id) } },
+                            enabled = tasks.any { it.listId != list?.id },
+                            onClick = { act { actions.onMove(ids, list?.id) } },
                         )
                     }
                     MenuPage.SEND -> actions.sendTargets.forEach { target ->

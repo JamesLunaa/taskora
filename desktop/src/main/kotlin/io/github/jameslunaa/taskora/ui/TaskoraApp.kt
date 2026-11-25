@@ -89,7 +89,7 @@ fun TaskoraApp(
     /** The desktop reports an accent color, so settings offer to use it. */
     systemAccentAvailable: Boolean = false,
 ) {
-    var listId by remember { mutableStateOf(TaskList.INBOX_ID) }
+    var listId by remember { mutableStateOf(TaskList.ALL_TASKS_ID) }
     var taskId by remember { mutableStateOf<Long?>(null) }
     var searching by remember { mutableStateOf(false) }
     var creatingList by remember { mutableStateOf(false) }
@@ -136,7 +136,7 @@ fun TaskoraApp(
     // The current list was deleted.
     LaunchedEffect(listState.isListMissing) {
         if (listState.isListMissing) {
-            listId = TaskList.INBOX_ID
+            listId = TaskList.ALL_TASKS_ID
             taskId = null
         }
     }
@@ -179,6 +179,7 @@ fun TaskoraApp(
         Row(Modifier.fillMaxSize()) {
             Sidebar(
                 lists = listState.lists,
+                allTasksCount = listState.allTasksCount,
                 selectedListId = listId.takeUnless { searching || browsedDevice != null },
                 searching = searching && browsedDevice == null,
                 onSelect = {
@@ -228,6 +229,7 @@ fun TaskoraApp(
                         uiState = listState,
                         selectedTaskId = taskId,
                         addFieldFocus = shortcuts.addFieldFocus,
+                        addedTaskIds = listViewModel.addedTaskIds,
                         onAddTask = listViewModel::addTask,
                         onOpenTask = { taskId = it },
                         onCheckedChange = listViewModel::setCompleted,
@@ -237,6 +239,8 @@ fun TaskoraApp(
                         onClearCompleted = listViewModel::clearCompleted,
                         onSortChange = listViewModel::setSortMode,
                         onDayFilterChange = listViewModel::setDayFilter,
+                        onListShownChange = listViewModel::setListShown,
+                        onShowAllLists = listViewModel::showAllLists,
                         onReorder = listViewModel::reorder,
                         bulkActions = bulkActions,
                         onToggleSelection = listViewModel::toggleSelection,
@@ -358,6 +362,7 @@ private fun DetailPane(taskId: Long, container: AppContainer, onDelete: (Task) -
             onSubtaskCompletedChange = viewModel::setSubtaskCompleted,
             onRenameSubtask = viewModel::renameSubtask,
             onDeleteSubtask = viewModel::deleteSubtask,
+            onReorderSubtasks = viewModel::reorderSubtasks,
             onDelete = onDelete,
             onClose = onClose,
         )

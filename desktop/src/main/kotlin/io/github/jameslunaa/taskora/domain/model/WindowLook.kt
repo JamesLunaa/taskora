@@ -24,7 +24,7 @@ data class WindowBounds(val x: Int, val y: Int, val width: Int, val height: Int)
 data class NoteSettings(
     val isOpen: Boolean = false,
     /** A list id or [TaskList.ALL_TASKS_ID]. */
-    val listId: Long = TaskList.INBOX_ID,
+    val listId: Long = TaskList.ALL_TASKS_ID,
     /** Null until the note is first moved or resized. */
     val bounds: WindowBounds? = null,
 )

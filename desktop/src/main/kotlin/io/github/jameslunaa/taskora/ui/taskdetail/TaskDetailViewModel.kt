@@ -97,7 +97,7 @@ class TaskDetailViewModel(
 
     fun setPriority(priority: Priority) = edit { it.copy(priority = priority) }
 
-    fun moveToList(listId: Long) = edit { it.copy(listId = listId) }
+    fun moveToList(listId: Long?) = edit { it.copy(listId = listId) }
 
     fun setCompleted(completed: Boolean) = edit {
         it.copy(isCompleted = completed, completedAt = if (completed) Instant.now(clock) else null)
@@ -121,6 +121,11 @@ class TaskDetailViewModel(
 
     fun deleteSubtask(subtask: Subtask) {
         viewModelScope.launch { taskRepository.deleteSubtask(subtask.id) }
+    }
+
+    /** Saves a new subtask order: [orderedIds] holds every subtask's id, first one on top. */
+    fun reorderSubtasks(orderedIds: List<Long>) {
+        viewModelScope.launch { taskRepository.reorderSubtasks(orderedIds) }
     }
 
     fun deleteTask() {

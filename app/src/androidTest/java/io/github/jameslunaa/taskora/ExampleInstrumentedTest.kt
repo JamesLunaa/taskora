@@ -19,6 +19,7 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("io.github.jameslunaa.taskora", appContext.packageName)
+        // Debug builds add a ".debug" suffix so they install next to the release app.
+        assertEquals("io.github.jameslunaa.taskora.debug", appContext.packageName)
     }
 }

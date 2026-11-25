@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AllInbox
-import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -51,6 +50,8 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @Composable
 fun ListsDrawer(
     lists: List<TaskList>,
+    /** Open tasks everywhere, those in no list included. */
+    allTasksCount: Int,
     selectedListId: Long?,
     onListClick: (TaskList) -> Unit,
     /** Long-press and drag a list to move it; called on release with every list's id in the new order. */
@@ -98,10 +99,7 @@ fun ListsDrawer(
                     selected = selectedListId == TaskList.ALL_TASKS_ID,
                     onClick = onAllTasks,
                     icon = { Icon(Icons.Outlined.AllInbox, contentDescription = null) },
-                    badge = {
-                        val total = lists.sumOf { it.activeTaskCount }
-                        if (total > 0) Text(total.toString())
-                    },
+                    badge = { if (allTasksCount > 0) Text(allTasksCount.toString()) },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                 )
             }
@@ -124,16 +122,12 @@ fun ListsDrawer(
                                 if (!longPressing && SystemClock.uptimeMillis() - longPressEndedAt >= 500) onListClick(list)
                             },
                             icon = {
-                                if (list.isInbox) {
-                                    Icon(Icons.Outlined.Inbox, contentDescription = null, tint = listColor(list.color))
-                                } else {
-                                    Box(
-                                        Modifier
-                                            .padding(4.dp)
-                                            .size(16.dp)
-                                            .background(listColor(list.color), CircleShape),
-                                    )
-                                }
+                                Box(
+                                    Modifier
+                                        .padding(4.dp)
+                                        .size(16.dp)
+                                        .background(listColor(list.color), CircleShape),
+                                )
                             },
                             badge = {
                                 if (list.activeTaskCount > 0) Text(list.activeTaskCount.toString())

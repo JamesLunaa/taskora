@@ -16,16 +16,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.outlined.Edit
 import io.github.jameslunaa.taskora.ui.icons.outlined.ExpandLess
 import io.github.jameslunaa.taskora.ui.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +56,11 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.jameslunaa.taskora.domain.DayFilter
@@ -69,19 +78,24 @@ import io.github.jameslunaa.taskora.resources.delete
 import io.github.jameslunaa.taskora.resources.delete_list
 import io.github.jameslunaa.taskora.resources.delete_list_confirm
 import io.github.jameslunaa.taskora.resources.edit_list
+import io.github.jameslunaa.taskora.resources.lists
 import io.github.jameslunaa.taskora.resources.more_options
 import io.github.jameslunaa.taskora.resources.new_task_hint
+import io.github.jameslunaa.taskora.resources.no_list
 import io.github.jameslunaa.taskora.resources.no_tasks_hint
 import io.github.jameslunaa.taskora.resources.no_tasks_title
 import io.github.jameslunaa.taskora.resources.nothing_due_today
 import io.github.jameslunaa.taskora.resources.nothing_due_tomorrow
+import io.github.jameslunaa.taskora.resources.show_all_lists
 import io.github.jameslunaa.taskora.resources.today
 import io.github.jameslunaa.taskora.resources.tomorrow
 import io.github.jameslunaa.taskora.ui.common.headerBandTopAppBarColors
+import io.github.jameslunaa.taskora.ui.lists.ListDot
 import io.github.jameslunaa.taskora.ui.lists.ListEditorDialog
 import io.github.jameslunaa.taskora.ui.lists.SortMenu
 import io.github.jameslunaa.taskora.ui.taskdetail.DueDatePickerDialog
 import io.github.jameslunaa.taskora.ui.theme.listColor
+import kotlinx.coroutines.flow.Flow
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
@@ -96,6 +110,8 @@ fun TaskListPane(
     uiState: TaskListUiState,
     selectedTaskId: Long?,
     addFieldFocus: FocusRequester,
+    /** Tasks just added; each one is scrolled into view. */
+    addedTaskIds: Flow<Long>,
     onAddTask: (String) -> Unit,
     onOpenTask: (Long) -> Unit,
     onCheckedChange: (Task, Boolean) -> Unit,
@@ -105,6 +121,9 @@ fun TaskListPane(
     onClearCompleted: () -> Unit,
     onSortChange: (TaskSortMode, Boolean) -> Unit,
     onDayFilterChange: (DayFilter) -> Unit,
+    /** All tasks only: shows or hides a list's tasks (null for the tasks in no list). */
+    onListShownChange: (Long?, Boolean) -> Unit,
+    onShowAllLists: () -> Unit,
     /** Saves a drag: the list's active task ids in their new order. */
     onReorder: (List<Long>) -> Unit,
     bulkActions: TaskBulkActions,
@@ -121,6 +140,7 @@ fun TaskListPane(
 
     // While dragging, the order lives here; it's saved when the drag ends.
     val lazyListState = rememberLazyListState()
+    ScrollToAddedTask(lazyListState, uiState.sections, addedTaskIds)
     // A filtered list shows only some tasks, so a drag couldn't place them among the hidden ones.
     val canDrag = list != null && !uiState.isAllTasks && !uiState.isSelecting && uiState.dayFilter == DayFilter.ALL
     var moved by remember { mutableStateOf(false) }
@@ -192,7 +212,7 @@ fun TaskListPane(
                         }
                     }
                     ListMenu(
-                        canDeleteList = list != null && !list.isInbox,
+                        canDeleteList = list != null,
                         canClearCompleted = uiState.completedTasks.isNotEmpty(),
                         onSelect = { dialog = it },
                     )
@@ -202,7 +222,11 @@ fun TaskListPane(
         }
 
         AddTaskField(onAdd = onAddTask, focusRequester = addFieldFocus)
-        DayFilterChips(uiState.dayFilter, onDayFilterChange)
+        DayFilterChips(uiState.dayFilter, onDayFilterChange) {
+            if (uiState.isAllTasks) {
+                ListFilterChip(uiState.lists, uiState.hiddenListIds, onListShownChange, onShowAllLists)
+            }
+        }
 
         if (!uiState.isLoading && uiState.isEmpty) {
             EmptyState(uiState.dayFilter, Modifier.weight(1f))
@@ -408,7 +432,7 @@ private fun CompletedHeader(count: Int, expanded: Boolean, onToggle: () -> Unit)
 
 /** Today/Tomorrow chips under the add field; clicking the selected one shows everything again. */
 @Composable
-private fun DayFilterChips(selected: DayFilter, onSelect: (DayFilter) -> Unit) {
+private fun DayFilterChips(selected: DayFilter, onSelect: (DayFilter) -> Unit, extra: @Composable () -> Unit = {}) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -419,6 +443,50 @@ private fun DayFilterChips(selected: DayFilter, onSelect: (DayFilter) -> Unit) {
                 onClick = { onSelect(if (selected == filter) DayFilter.ALL else filter) },
                 label = { Text(stringResource(label)) },
             )
+        }
+        extra()
+    }
+}
+
+/** All tasks' Lists chip: a menu that hides or shows each list's tasks until All tasks closes. */
+@Composable
+private fun ListFilterChip(
+    lists: List<TaskList>,
+    hidden: Set<Long?>,
+    onShownChange: (Long?, Boolean) -> Unit,
+    onShowAll: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        FilterChip(
+            selected = hidden.isNotEmpty(),
+            onClick = { expanded = true },
+            label = { Text(stringResource(Res.string.lists)) },
+            trailingIcon = {
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize))
+            },
+        )
+        // The menu stays open so several lists can be toggled in one go.
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.show_all_lists)) },
+                enabled = hidden.isNotEmpty(),
+                onClick = onShowAll,
+            )
+            HorizontalDivider()
+            (listOf(null) + lists).forEach { list ->
+                val shown = list?.id !in hidden
+                DropdownMenuItem(
+                    text = { Text(list?.name ?: stringResource(Res.string.no_list)) },
+                    modifier = Modifier.semantics {
+                        role = Role.Checkbox
+                        toggleableState = ToggleableState(shown)
+                    },
+                    leadingIcon = { ListDot(list?.color, Modifier.size(12.dp)) },
+                    trailingIcon = { Checkbox(checked = shown, onCheckedChange = null) },
+                    onClick = { onShownChange(list?.id, !shown) },
+                )
+            }
         }
     }
 }

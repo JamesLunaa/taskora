@@ -1,6 +1,6 @@
 package io.github.jameslunaa.taskora.ui.taskdetail
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -21,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Delete
@@ -39,6 +39,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -58,6 +59,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -81,7 +84,9 @@ import io.github.jameslunaa.taskora.ui.common.labelRes
 import io.github.jameslunaa.taskora.ui.common.recurrenceText
 import io.github.jameslunaa.taskora.ui.common.timeText
 import io.github.jameslunaa.taskora.ui.theme.TaskoraTheme
-import io.github.jameslunaa.taskora.ui.theme.listColor
+import io.github.jameslunaa.taskora.ui.lists.ListDot
+import sh.calvin.reorderable.ReorderableColumn
+import sh.calvin.reorderable.ReorderableListItemScope
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -113,6 +118,7 @@ fun TaskDetailScreen(
             onSubtaskCompletedChange = viewModel::setSubtaskCompleted,
             onRenameSubtask = viewModel::renameSubtask,
             onDeleteSubtask = viewModel::deleteSubtask,
+            onReorderSubtasks = viewModel::reorderSubtasks,
             onDeleteTask = viewModel::deleteTask,
         ),
     )
@@ -127,11 +133,13 @@ class TaskDetailActions(
     val onReminderChange: (Instant?) -> Unit = {},
     val onRecurrenceChange: (Recurrence?) -> Unit = {},
     val onPriorityChange: (Priority) -> Unit = {},
-    val onListChange: (Long) -> Unit = {},
+    val onListChange: (Long?) -> Unit = {},
     val onAddSubtask: (String) -> Unit = {},
     val onSubtaskCompletedChange: (Subtask, Boolean) -> Unit = { _, _ -> },
     val onRenameSubtask: (Subtask, String) -> Unit = { _, _ -> },
     val onDeleteSubtask: (Subtask) -> Unit = {},
+    /** Called when a dragged subtask is dropped, with every subtask's id in the new order. */
+    val onReorderSubtasks: (List<Long>) -> Unit = {},
     val onDeleteTask: () -> Unit = {},
 )
 
@@ -239,30 +247,23 @@ private fun TitleRow(task: Task, actions: TaskDetailActions) {
 }
 
 @Composable
-private fun ListSection(listId: Long, lists: List<TaskList>, onListChange: (Long) -> Unit) {
-    val current = lists.find { it.id == listId } ?: return
+private fun ListSection(listId: Long?, lists: List<TaskList>, onListChange: (Long?) -> Unit) {
+    val current = lists.find { it.id == listId }
     var expanded by remember { mutableStateOf(false) }
     Box {
         ListItem(
             modifier = Modifier.clickable { expanded = true },
-            leadingContent = {
-                Box(
-                    Modifier
-                        .padding(4.dp)
-                        .size(16.dp)
-                        .background(listColor(current.color), CircleShape),
-                )
-            },
+            leadingContent = { ListDot(current?.color, Modifier.padding(4.dp).size(16.dp)) },
             overlineContent = { Text(stringResource(R.string.list)) },
-            headlineContent = { Text(current.name) },
+            headlineContent = { Text(current?.name ?: stringResource(R.string.no_list)) },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            lists.forEach { list ->
+            (listOf(null) + lists).forEach { list ->
                 DropdownMenuItem(
-                    text = { Text(list.name) },
+                    text = { Text(list?.name ?: stringResource(R.string.no_list)) },
                     onClick = {
                         expanded = false
-                        onListChange(list.id)
+                        onListChange(list?.id)
                     },
                 )
             }
@@ -410,43 +411,25 @@ private fun SubtaskSection(subtasks: List<Subtask>, actions: TaskDetailActions) 
         style = MaterialTheme.typography.titleSmall,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
     )
-    subtasks.forEach { subtask ->
+    // The new order is shown from the drop until the database sends it back, so the rows don't jump.
+    var order by remember(subtasks) { mutableStateOf(subtasks) }
+    val haptics = LocalHapticFeedback.current
+    ReorderableColumn(
+        list = order,
+        onSettle = { from, to ->
+            order = order.toMutableList().apply { add(to, removeAt(from)) }
+            actions.onReorderSubtasks(order.map { it.id })
+        },
+    ) { _, subtask, isDragging ->
         key(subtask.id) {
-            var editing by rememberSaveable { mutableStateOf(false) }
-            Row(
-                modifier = Modifier.padding(start = 4.dp, end = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(
-                    checked = subtask.isCompleted,
-                    onCheckedChange = { actions.onSubtaskCompletedChange(subtask, it) },
-                )
-                if (editing) {
-                    SubtaskTitleField(
-                        title = subtask.title,
-                        onDone = { title ->
-                            editing = false
-                            actions.onRenameSubtask(subtask, title)
-                        },
-                        modifier = Modifier.weight(1f),
+            ReorderableItem {
+                val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "drag elevation")
+                Surface(shadowElevation = elevation) {
+                    SubtaskRow(
+                        subtask,
+                        actions,
+                        onDragStarted = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
                     )
-                } else {
-                    Text(
-                        subtask.title,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable(onClickLabel = stringResource(R.string.edit_subtask)) { editing = true }
-                            .padding(vertical = 12.dp),
-                        textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else null,
-                        color = if (subtask.isCompleted) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                    )
-                }
-                IconButton(onClick = { actions.onDeleteSubtask(subtask) }) {
-                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.delete_subtask))
                 }
             }
         }
@@ -470,6 +453,63 @@ private fun SubtaskSection(subtasks: List<Subtask>, actions: TaskDetailActions) 
         ),
         keyboardActions = KeyboardActions(onDone = { submit() }),
     )
+}
+
+@Composable
+private fun ReorderableListItemScope.SubtaskRow(
+    subtask: Subtask,
+    actions: TaskDetailActions,
+    onDragStarted: () -> Unit,
+) {
+    var editing by rememberSaveable { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.padding(end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .draggableHandle(onDragStarted = { onDragStarted() })
+                .size(width = 32.dp, height = 48.dp),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            Icon(
+                Icons.Filled.DragIndicator,
+                contentDescription = stringResource(R.string.drag_to_reorder),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Checkbox(
+            checked = subtask.isCompleted,
+            onCheckedChange = { actions.onSubtaskCompletedChange(subtask, it) },
+        )
+        if (editing) {
+            SubtaskTitleField(
+                title = subtask.title,
+                onDone = { title ->
+                    editing = false
+                    actions.onRenameSubtask(subtask, title)
+                },
+                modifier = Modifier.weight(1f),
+            )
+        } else {
+            Text(
+                subtask.title,
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClickLabel = stringResource(R.string.edit_subtask)) { editing = true }
+                    .padding(vertical = 12.dp),
+                textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else null,
+                color = if (subtask.isCompleted) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+            )
+        }
+        IconButton(onClick = { actions.onDeleteSubtask(subtask) }) {
+            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.delete_subtask))
+        }
+    }
 }
 
 /** Inline editor for a subtask's title. It saves on Done or when it loses focus. */

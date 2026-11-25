@@ -1,9 +1,7 @@
 package io.github.jameslunaa.taskora.ui.tasks
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -13,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
@@ -49,7 +46,7 @@ import io.github.jameslunaa.taskora.domain.model.Task
 import io.github.jameslunaa.taskora.domain.model.TaskList
 import io.github.jameslunaa.taskora.ui.common.color
 import io.github.jameslunaa.taskora.ui.common.labelRes
-import io.github.jameslunaa.taskora.ui.theme.listColor
+import io.github.jameslunaa.taskora.ui.lists.ListDot
 import java.time.LocalDate
 
 /** What the long-press sheet can do to its task; every callback is for that one task. */
@@ -159,9 +156,10 @@ fun PriorityDialog(onSelect: (Priority) -> Unit, onDismiss: () -> Unit) {
 }
 
 @Composable
+/** [onSelect] gets null for "No list". */
 fun MoveToListDialog(
     lists: List<TaskList>,
-    onSelect: (TaskList) -> Unit,
+    onSelect: (TaskList?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -169,7 +167,7 @@ fun MoveToListDialog(
         title = { Text(stringResource(R.string.move_to_list)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                lists.forEach { list ->
+                (listOf(null) + lists).forEach { list ->
                     ListItem(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -178,14 +176,8 @@ fun MoveToListDialog(
                                 onDismiss()
                             },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        leadingContent = {
-                            Box(
-                                Modifier
-                                    .size(12.dp)
-                                    .background(listColor(list.color), CircleShape),
-                            )
-                        },
-                        headlineContent = { Text(list.name) },
+                        leadingContent = { ListDot(list?.color, Modifier.size(12.dp)) },
+                        headlineContent = { Text(list?.name ?: stringResource(R.string.no_list)) },
                     )
                 }
             }
