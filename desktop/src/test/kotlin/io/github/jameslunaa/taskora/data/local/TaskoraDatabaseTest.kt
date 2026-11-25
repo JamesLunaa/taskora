@@ -2,6 +2,7 @@ package io.github.jameslunaa.taskora.data.local
 
 import io.github.jameslunaa.taskora.data.local.entity.SubtaskEntity
 import io.github.jameslunaa.taskora.data.local.entity.TaskListEntity
+import io.github.jameslunaa.taskora.data.local.entity.toDomain
 import io.github.jameslunaa.taskora.data.local.entity.toEntity
 import io.github.jameslunaa.taskora.domain.model.Task
 import kotlinx.coroutines.flow.first
@@ -69,6 +70,16 @@ class TaskoraDatabaseTest {
 
         assertNull(db.taskDao().getById(taskId))
         assertTrue(db.taskDao().observeByList(listId).first().isEmpty())
+    }
+
+    @Test
+    fun subtaskSortOrders_setTheirOrder() = runBlocking {
+        val taskId = insertTask(INBOX_ID, "a")
+        val (a, b, c) = listOf("A", "B", "C").mapIndexed { i, title ->
+            db.subtaskDao().insert(SubtaskEntity(taskId = taskId, title = title, isCompleted = false, sortOrder = i))
+        }
+        db.subtaskDao().setSortOrders(listOf(c, a, b))
+        assertEquals(listOf("C", "A", "B"), db.taskDao().getById(taskId)!!.toDomain().subtasks.map { it.title })
     }
 
     @Test

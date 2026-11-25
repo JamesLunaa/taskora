@@ -130,6 +130,11 @@ class TaskDetailViewModel @Inject constructor(
         viewModelScope.launch { taskRepository.deleteSubtask(subtask.id) }
     }
 
+    /** Saves a new subtask order: [orderedIds] holds every subtask's id, first one on top. */
+    fun reorderSubtasks(orderedIds: List<Long>) {
+        viewModelScope.launch { taskRepository.reorderSubtasks(orderedIds) }
+    }
+
     fun deleteTask() {
         saveJob?.cancel()
         viewModelScope.launch {

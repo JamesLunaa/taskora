@@ -68,6 +68,9 @@ interface TaskRepository {
     suspend fun updateSubtask(subtask: Subtask)
     suspend fun setSubtaskCompleted(id: Long, completed: Boolean)
     suspend fun deleteSubtask(id: Long)
+
+    /** Stores [orderedIds] as the order of a task's subtasks (the first id gets position 0). */
+    suspend fun reorderSubtasks(orderedIds: List<Long>)
 }
 
 class OfflineTaskRepository(
@@ -200,6 +203,8 @@ class OfflineTaskRepository(
     override suspend fun setSubtaskCompleted(id: Long, completed: Boolean) = subtaskDao.setCompleted(id, completed)
 
     override suspend fun deleteSubtask(id: Long) = subtaskDao.deleteById(id)
+
+    override suspend fun reorderSubtasks(orderedIds: List<Long>) = subtaskDao.setSortOrders(orderedIds)
 
     private fun syncReminder(task: Task) {
         val at = task.pendingReminder(Instant.now(clock))

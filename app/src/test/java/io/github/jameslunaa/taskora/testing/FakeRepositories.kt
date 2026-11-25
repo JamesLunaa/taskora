@@ -135,6 +135,17 @@ class FakeTaskRepository(private val clock: Clock) : TaskRepository {
     override suspend fun deleteSubtask(id: Long) =
         tasks.update { all -> all.map { task -> task.copy(subtasks = task.subtasks.filterNot { it.id == id }) } }
 
+    override suspend fun reorderSubtasks(orderedIds: List<Long>) =
+        tasks.update { all ->
+            all.map { task ->
+                task.copy(
+                    subtasks = task.subtasks
+                        .map { sub -> orderedIds.indexOf(sub.id).let { if (it >= 0) sub.copy(sortOrder = it) else sub } }
+                        .sortedBy { it.sortOrder },
+                )
+            }
+        }
+
     private fun modify(id: Long, transform: (Task) -> Task) =
         tasks.update { all -> all.map { if (it.id == id) transform(it) else it } }
 

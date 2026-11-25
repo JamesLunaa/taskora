@@ -358,6 +358,7 @@ private fun DetailPane(taskId: Long, container: AppContainer, onDelete: (Task) -
             onSubtaskCompletedChange = viewModel::setSubtaskCompleted,
             onRenameSubtask = viewModel::renameSubtask,
             onDeleteSubtask = viewModel::deleteSubtask,
+            onReorderSubtasks = viewModel::reorderSubtasks,
             onDelete = onDelete,
             onClose = onClose,
         )

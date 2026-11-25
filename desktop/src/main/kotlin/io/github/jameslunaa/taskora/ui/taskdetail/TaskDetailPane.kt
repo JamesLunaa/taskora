@@ -1,8 +1,13 @@
 package io.github.jameslunaa.taskora.ui.taskdetail
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -36,6 +41,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -81,6 +87,7 @@ import io.github.jameslunaa.taskora.resources.created_on
 import io.github.jameslunaa.taskora.resources.delete_subtask
 import io.github.jameslunaa.taskora.resources.edit_subtask
 import io.github.jameslunaa.taskora.resources.delete_task
+import io.github.jameslunaa.taskora.resources.drag_to_reorder
 import io.github.jameslunaa.taskora.resources.due_date
 import io.github.jameslunaa.taskora.resources.list
 import io.github.jameslunaa.taskora.resources.notes
@@ -97,6 +104,7 @@ import io.github.jameslunaa.taskora.ui.common.dueText
 import io.github.jameslunaa.taskora.ui.common.label
 import io.github.jameslunaa.taskora.ui.common.recurrenceText
 import io.github.jameslunaa.taskora.ui.common.timeText
+import io.github.jameslunaa.taskora.ui.icons.outlined.DragIndicator
 import io.github.jameslunaa.taskora.ui.lists.ListDot
 import io.github.jameslunaa.taskora.ui.theme.TaskoraTheme
 import org.jetbrains.compose.resources.stringResource
@@ -104,6 +112,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import sh.calvin.reorderable.ReorderableColumn
 
 /** Everything the pane can do; the app wires these to [TaskDetailViewModel] and the list's delete. */
 class TaskDetailActions(
@@ -120,6 +129,8 @@ class TaskDetailActions(
     val onSubtaskCompletedChange: (Subtask, Boolean) -> Unit,
     val onRenameSubtask: (Subtask, String) -> Unit,
     val onDeleteSubtask: (Subtask) -> Unit,
+    /** Called when a dragged subtask is dropped, with every subtask's id in the new order. */
+    val onReorderSubtasks: (List<Long>) -> Unit,
     val onDelete: (Task) -> Unit,
     val onClose: () -> Unit,
 )
@@ -298,8 +309,23 @@ private fun TaskDetailContent(
 
         Section(stringResource(Res.string.subtasks)) {
             Column {
-                task.subtasks.forEach { subtask ->
-                    key(subtask.id) { SubtaskRow(subtask, actions) }
+                // The new order is shown from the drop until the database sends it back, so the rows don't jump.
+                var order by remember(task.subtasks) { mutableStateOf(task.subtasks) }
+                ReorderableColumn(
+                    list = order,
+                    onSettle = { from, to ->
+                        order = order.toMutableList().apply { add(to, removeAt(from)) }
+                        actions.onReorderSubtasks(order.map { it.id })
+                    },
+                ) { _, subtask, isDragging ->
+                    key(subtask.id) {
+                        ReorderableItem {
+                            val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp)
+                            Surface(color = MaterialTheme.colorScheme.surfaceContainer, shadowElevation = elevation) {
+                                SubtaskRow(subtask, actions, dragHandle = Modifier.draggableHandle())
+                            }
+                        }
+                    }
                 }
                 AddSubtaskField(actions.onAddSubtask)
             }
@@ -419,9 +445,20 @@ private fun ListPicker(listId: Long?, lists: List<TaskList>, onSelect: (Long?) -
 }
 
 @Composable
-private fun SubtaskRow(subtask: Subtask, actions: TaskDetailActions) {
+private fun SubtaskRow(subtask: Subtask, actions: TaskDetailActions, dragHandle: Modifier) {
     var editing by remember { mutableStateOf(false) }
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val hovered by interactionSource.collectIsHoveredAsState()
+    Row(Modifier.hoverable(interactionSource), verticalAlignment = Alignment.CenterVertically) {
+        Box(dragHandle.size(24.dp, 40.dp), contentAlignment = Alignment.Center) {
+            if (hovered) {
+                Icon(
+                    Icons.Outlined.DragIndicator,
+                    contentDescription = stringResource(Res.string.drag_to_reorder),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         Checkbox(
             checked = subtask.isCompleted,
             onCheckedChange = { actions.onSubtaskCompletedChange(subtask, it) },

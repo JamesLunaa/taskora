@@ -194,6 +194,7 @@
     <string name="add_subtask_hint">Add subtask</string>
     <string name="edit_subtask">Edit subtask</string>
     <string name="delete_subtask">Delete subtask</string>
+    <string name="drag_to_reorder">Drag to reorder</string>
     <string name="delete_task">Delete task</string>
     <string name="delete_task_confirm">Delete this task and its subtasks?</string>
 </resources>
