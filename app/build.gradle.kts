@@ -31,8 +31,8 @@ android {
         applicationId = "io.github.jameslunaa.taskora"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.3.0"
+        versionCode = 4
+        versionName = "1.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
